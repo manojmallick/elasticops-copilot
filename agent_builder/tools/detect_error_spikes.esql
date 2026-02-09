@@ -1,0 +1,10 @@
+// ES|QL Tool: Detect Error Spikes
+// This tool detects unusual spikes in error logs that might indicate an incident
+
+FROM logs-app
+| WHERE log_level == "error"
+| EVAL error_time = DATE_TRUNC(5 minutes, @timestamp)
+| STATS error_count = COUNT(*) BY error_time, service
+| WHERE error_count >= 40
+| SORT error_time DESC
+| LIMIT 100

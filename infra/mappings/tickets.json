@@ -1,0 +1,65 @@
+{
+  "mappings": {
+    "properties": {
+      "ticket_id": {
+        "type": "keyword"
+      },
+      "subject": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "category": {
+        "type": "keyword"
+      },
+      "severity": {
+        "type": "keyword"
+      },
+      "priority": {
+        "type": "keyword"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "channel": {
+        "type": "keyword"
+      },
+      "customer_id": {
+        "type": "keyword"
+      },
+      "assigned_to": {
+        "type": "keyword"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      },
+      "resolved_at": {
+        "type": "date"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "customer_message": {
+        "type": "text"
+      },
+      "internal_notes": {
+        "type": "text"
+      },
+      "incident_ref": {
+        "type": "keyword"
+      },
+      "embedding": {
+        "type": "dense_vector",
+        "dims": 384,
+        "index": true,
+        "similarity": "cosine"
+      }
+    }
+  }
+}

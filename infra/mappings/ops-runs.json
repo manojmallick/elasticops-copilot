@@ -1,0 +1,37 @@
+{
+  "mappings": {
+    "properties": {
+      "run_id": {
+        "type": "keyword"
+      },
+      "workflow": {
+        "type": "keyword"
+      },
+      "ref_id": {
+        "type": "keyword"
+      },
+      "ref_type": {
+        "type": "keyword"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "started_at": {
+        "type": "date"
+      },
+      "completed_at": {
+        "type": "date"
+      },
+      "duration_ms": {
+        "type": "integer"
+      },
+      "steps": {
+        "type": "object",
+        "enabled": true
+      },
+      "error": {
+        "type": "text"
+      }
+    }
+  }
+}

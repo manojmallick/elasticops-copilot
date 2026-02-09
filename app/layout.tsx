@@ -1,0 +1,31 @@
+import './globals.css';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'ElasticOps Copilot',
+  description: 'Multi-Agent Support Automation + Incident Awareness',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <nav className="navbar">
+          <div className="nav-container">
+            <h1 className="nav-title">⚡ ElasticOps Copilot</h1>
+            <div className="nav-links">
+              <a href="/inbox">Inbox</a>
+              <a href="/search">Search</a>
+              <a href="/dashboard">Dashboard</a>
+            </div>
+          </div>
+        </nav>
+        <main className="main-content">{children}</main>
+      </body>
+    </html>
+  );
+}

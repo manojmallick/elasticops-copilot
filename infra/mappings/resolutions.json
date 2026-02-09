@@ -1,0 +1,50 @@
+{
+  "mappings": {
+    "properties": {
+      "resolution_id": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "summary": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "steps": {
+        "type": "text"
+      },
+      "category": {
+        "type": "keyword"
+      },
+      "severity": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "success_rate": {
+        "type": "float"
+      },
+      "avg_resolution_time_minutes": {
+        "type": "integer"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      },
+      "created_by": {
+        "type": "keyword"
+      },
+      "embedding": {
+        "type": "dense_vector",
+        "dims": 384,
+        "index": true,
+        "similarity": "cosine"
+      }
+    }
+  }
+}

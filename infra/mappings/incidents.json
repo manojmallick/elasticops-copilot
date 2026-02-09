@@ -1,0 +1,53 @@
+{
+  "mappings": {
+    "properties": {
+      "incident_id": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "summary": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "service": {
+        "type": "keyword"
+      },
+      "env": {
+        "type": "keyword"
+      },
+      "severity": {
+        "type": "keyword"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "detected_at": {
+        "type": "date"
+      },
+      "resolved_at": {
+        "type": "date"
+      },
+      "error_count": {
+        "type": "integer"
+      },
+      "error_rate": {
+        "type": "float"
+      },
+      "affected_users": {
+        "type": "integer"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "embedding": {
+        "type": "dense_vector",
+        "dims": 384,
+        "index": true,
+        "similarity": "cosine"
+      }
+    }
+  }
+}

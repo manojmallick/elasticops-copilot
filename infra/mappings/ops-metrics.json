@@ -1,0 +1,33 @@
+{
+  "mappings": {
+    "properties": {
+      "metric_type": {
+        "type": "keyword"
+      },
+      "metric_name": {
+        "type": "keyword"
+      },
+      "value": {
+        "type": "float"
+      },
+      "unit": {
+        "type": "keyword"
+      },
+      "category": {
+        "type": "keyword"
+      },
+      "ref_id": {
+        "type": "keyword"
+      },
+      "ref_type": {
+        "type": "keyword"
+      },
+      "timestamp": {
+        "type": "date"
+      },
+      "tags": {
+        "type": "keyword"
+      }
+    }
+  }
+}

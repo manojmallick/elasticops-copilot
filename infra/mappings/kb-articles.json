@@ -1,0 +1,41 @@
+{
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "category": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      },
+      "author": {
+        "type": "keyword"
+      },
+      "views": {
+        "type": "integer"
+      },
+      "helpful_count": {
+        "type": "integer"
+      },
+      "embedding": {
+        "type": "dense_vector",
+        "dims": 384,
+        "index": true,
+        "similarity": "cosine"
+      }
+    }
+  }
+}
