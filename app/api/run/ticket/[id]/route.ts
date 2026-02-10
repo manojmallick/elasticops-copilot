@@ -14,16 +14,36 @@ export async function POST(
   
   try {
     // Fetch the ticket
-    const ticketResponse = await esClient.get({
-      index: 'tickets',
-      id,
-    });
+    let ticketResponse;
+    try {
+      ticketResponse = await esClient.get({
+        index: 'tickets',
+        id,
+      });
+    } catch (error: any) {
+      // Handle 404 from Elasticsearch
+      if (error.statusCode === 404 || error.meta?.statusCode === 404) {
+        return NextResponse.json(
+          { 
+            error: 'Ticket not found',
+            details: `Ticket ${id} does not exist in the tickets index`,
+            run_id: runId 
+          },
+          { status: 404 }
+        );
+      }
+      throw error;
+    }
     
     const ticket = ticketResponse._source as any;
     
-    if (!ticket) {
+    if (!ticket || !ticketResponse.found) {
       return NextResponse.json(
-        { error: 'Ticket not found' },
+        { 
+          error: 'Ticket not found',
+          details: `Ticket ${id} does not exist in the tickets index`,
+          run_id: runId 
+        },
         { status: 404 }
       );
     }
@@ -304,15 +324,59 @@ export async function POST(
       steps,
     });
     
+    // Build action summary
+    let actionSummary = '';
+    if (shouldUpdate) {
+      actionSummary = 'Ticket updated with AI-generated response';
+    } else if (isDuplicate) {
+      actionSummary = 'Potential duplicate detected - flagged for review';
+    } else {
+      actionSummary = 'Flagged for human review - insufficient confidence';
+    }
+    
+    // Format citations for CopilotRunResponse
+    const formattedCitations = citations.map((c: string) => {
+      const [index, id] = c.split(':');
+      return {
+        index: index as any,
+        id,
+      };
+    });
+    
+    // Return CopilotRunResponse format
     return NextResponse.json({
-      success: true,
-      ticket_id: id,
+      ok: true,
       run_id: runId,
-      classification,
-      isDuplicate,
-      confidence,
-      citations,
-      updated: shouldUpdate,
+      timeline_url: `/timeline/${runId}`,
+      summary: actionSummary,
+      recommended_action: shouldUpdate 
+        ? 'Ticket has been auto-triaged and updated'
+        : isDuplicate
+        ? 'Review for potential merge with existing ticket'
+        : 'Manual review required',
+      entities: {
+        ticket_id: ticket.ticket_id,
+        duplicate_of_ticket_id: isDuplicate && similarTickets.length > 0 
+          ? similarTickets[0].ticket_id 
+          : undefined,
+      },
+      outputs: {
+        category: classification.category,
+        severity: classification.severity,
+        priority: classification.priority,
+        draft_customer_message: customerMessage,
+        internal_notes: internalNotes,
+      },
+      citations: formattedCitations,
+      confidence: confidence as any,
+      metrics: {
+        kb_articles_found: kbArticles.length,
+        resolutions_found: resolutions.length,
+        similar_tickets_found: similarTickets.length,
+      },
+      debug: {
+        took_ms: Date.now() - startedAt.getTime(),
+      },
     });
     
   } catch (error: any) {

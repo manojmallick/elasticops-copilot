@@ -18,6 +18,7 @@ export default function RootLayout({
           <div className="nav-container">
             <h1 className="nav-title">⚡ ElasticOps Copilot</h1>
             <div className="nav-links">
+              <a href="/copilot">Copilot</a>
               <a href="/inbox">Inbox</a>
               <a href="/search">Search</a>
               <a href="/dashboard">Dashboard</a>

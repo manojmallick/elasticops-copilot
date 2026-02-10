@@ -36,9 +36,15 @@ export async function POST(request: NextRequest) {
       });
       
       return NextResponse.json({
-        found: false,
-        message: 'No error spikes detected in the last 5 minutes',
+        ok: false,
         run_id: runId,
+        timeline_url: `/timeline/${runId}`,
+        summary: 'No error spikes detected in the last 5 minutes',
+        recommended_action: 'System is healthy. No action needed.',
+        citations: [],
+        confidence: 'high' as const,
+        metrics: { spikes_found: 0 },
+        debug: { took_ms: Date.now() - startedAt.getTime() },
       });
     }
     
@@ -178,17 +184,45 @@ export async function POST(request: NextRequest) {
       steps,
     });
     
+    // Build citations from resolutions
+    const citations = resolutions.map((r: any) => ({
+      index: 'resolutions' as const,
+      id: r.id,
+      highlight: r.title,
+    }));
+    
+    // Add incident as citation
+    citations.unshift({
+      index: 'incidents' as const,
+      id: incidentId,
+      highlight: incidentSummary,
+    });
+    
+    // Return CopilotRunResponse format
     return NextResponse.json({
-      success: true,
-      found: true,
-      incident_id: incidentId,
-      ticket_id: ticketId,
+      ok: true,
       run_id: runId,
-      summary: {
-        service,
-        env,
-        error_count: errorCount,
+      timeline_url: `/timeline/${runId}`,
+      summary: `Detected ${errorCount} errors in ${service} (${env}). Created incident and ticket.`,
+      recommended_action: `Incident ${incident.incident_id} requires immediate attention`,
+      entities: {
+        incident_id: incident.incident_id,
+        ticket_id: ticket.ticket_id,
+      },
+      outputs: {
+        category: 'incident',
         severity: incident.severity,
+        priority: ticket.priority,
+      },
+      citations,
+      confidence: 'high' as const,
+      metrics: {
+        error_count: errorCount,
+        resolutions_found: resolutions.length,
+        mtta_seconds: 30,
+      },
+      debug: {
+        took_ms: Date.now() - startedAt.getTime(),
       },
     });
     
