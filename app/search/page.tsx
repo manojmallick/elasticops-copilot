@@ -49,7 +49,7 @@ export default function SearchPage() {
     <div>
       <div className="page-header">
         <h1 className="page-title">Search Explorer</h1>
-        <p className="page-subtitle">Hybrid search with BM25 + vector similarity</p>
+        <p className="page-subtitle">Hybrid search with RRF (BM25 + vector similarity)</p>
       </div>
 
       <div className="card">
@@ -147,8 +147,8 @@ export default function SearchPage() {
                   </div>
                 )}
 
-                {/* Explanation (collapsible) */}
-                {hit.explanation && (
+                {/* Explanation (collapsible) - RRF breakdown */}
+                {hit.explain && (
                   <div style={{ marginTop: '1rem', borderTop: '1px solid #e0e0e0', paddingTop: '1rem' }}>
                     <button
                       onClick={() => toggleExplanation(hit.id)}
@@ -166,18 +166,72 @@ export default function SearchPage() {
                     </button>
                     
                     {expandedExplanations.has(hit.id) && (
-                      <pre style={{ 
-                        marginTop: '0.5rem', 
-                        fontSize: '0.75rem',
-                        whiteSpace: 'pre-wrap',
-                        background: '#f5f5f5',
-                        padding: '0.75rem',
+                      <div style={{ 
+                        marginTop: '0.75rem', 
+                        background: '#f9f9f9',
+                        padding: '1rem',
                         borderRadius: '4px',
-                        maxHeight: '300px',
-                        overflow: 'auto'
                       }}>
-                        {hit.explanation}
-                      </pre>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: '#333' }}>
+                          Reciprocal Rank Fusion (k={hit.explain.rrf.k})
+                        </div>
+                        
+                        <div style={{ display: 'grid', gap: '0.75rem' }}>
+                          {hit.explain.bm25 && (
+                            <div style={{
+                              background: '#fff',
+                              padding: '0.75rem',
+                              borderRadius: '4px',
+                              border: '1px solid #e0e0e0'
+                            }}>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1a73e8', marginBottom: '0.25rem' }}>
+                                📝 BM25 Text Relevance
+                              </div>
+                              <div style={{ fontSize: '0.875rem', color: '#333' }}>
+                                Score: {hit.explain.bm25.score.toFixed(4)} • Rank: #{hit.explain.bm25.rank}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+                                RRF contribution: {(1 / (hit.explain.rrf.k + hit.explain.bm25.rank)).toFixed(6)}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {hit.explain.vector && (
+                            <div style={{
+                              background: '#fff',
+                              padding: '0.75rem',
+                              borderRadius: '4px',
+                              border: '1px solid #e0e0e0'
+                            }}>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#34a853', marginBottom: '0.25rem' }}>
+                                🧠 Vector Similarity
+                              </div>
+                              <div style={{ fontSize: '0.875rem', color: '#333' }}>
+                                Score: {hit.explain.vector.score.toFixed(4)} • Rank: #{hit.explain.vector.rank}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+                                RRF contribution: {(1 / (hit.explain.rrf.k + hit.explain.vector.rank)).toFixed(6)}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {!hit.explain.bm25 && !hit.explain.vector && (
+                            <div style={{ fontSize: '0.875rem', color: '#999', fontStyle: 'italic' }}>
+                              No ranking details available
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div style={{ 
+                          marginTop: '0.75rem', 
+                          fontSize: '0.75rem', 
+                          color: '#666',
+                          paddingTop: '0.75rem',
+                          borderTop: '1px solid #e0e0e0'
+                        }}>
+                          Final RRF Score: {hit.score.toFixed(6)}
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}

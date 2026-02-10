@@ -216,6 +216,109 @@ function renderStepContent(stepName: string, step: any): JSX.Element {
           );
         }
         
+        if (key === 'confidence_breakdown' && typeof value === 'object') {
+          return (
+            <div key={key} style={{ marginTop: '0.75rem' }}>
+              <strong>Confidence Breakdown:</strong>
+              <div style={{ 
+                marginTop: '0.5rem', 
+                padding: '1rem', 
+                background: '#f9f9f9', 
+                borderRadius: '4px'
+              }}>
+                <div style={{ display: 'grid', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.875rem', color: '#666' }}>📚 KB Articles</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ 
+                        width: '100px', 
+                        height: '8px', 
+                        background: '#e0e0e0', 
+                        borderRadius: '4px',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{ 
+                          width: `${value.kb_score * 100}%`, 
+                          height: '100%', 
+                          background: '#1a73e8',
+                          transition: 'width 0.3s ease'
+                        }} />
+                      </div>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 600, minWidth: '40px', textAlign: 'right' }}>
+                        {(value.kb_score * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.875rem', color: '#666' }}>🔧 Resolutions</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ 
+                        width: '100px', 
+                        height: '8px', 
+                        background: '#e0e0e0', 
+                        borderRadius: '4px',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{ 
+                          width: `${value.resolution_score * 100}%`, 
+                          height: '100%', 
+                          background: '#34a853',
+                          transition: 'width 0.3s ease'
+                        }} />
+                      </div>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 600, minWidth: '40px', textAlign: 'right' }}>
+                        {(value.resolution_score * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.875rem', color: '#666' }}>🎫 Similar Tickets</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ 
+                        width: '100px', 
+                        height: '8px', 
+                        background: '#e0e0e0', 
+                        borderRadius: '4px',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{ 
+                          width: `${value.similar_tickets_score * 100}%`, 
+                          height: '100%', 
+                          background: '#fbbc04',
+                          transition: 'width 0.3s ease'
+                        }} />
+                      </div>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 600, minWidth: '40px', textAlign: 'right' }}>
+                        {(value.similar_tickets_score * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div style={{ 
+                  marginTop: '0.75rem', 
+                  paddingTop: '0.75rem', 
+                  borderTop: '1px solid #e0e0e0',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Overall Confidence</span>
+                  <span style={{ 
+                    fontSize: '1rem', 
+                    fontWeight: 700,
+                    color: value.overall >= 0.7 ? '#34a853' : value.overall >= 0.4 ? '#fbbc04' : '#ea4335'
+                  }}>
+                    {(value.overall * 100).toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        
         // Default rendering
         if (typeof value === 'object') {
           return (

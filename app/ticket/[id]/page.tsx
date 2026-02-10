@@ -75,6 +75,7 @@ export default function TicketDetailPage() {
   const [loading, setLoading] = useState(true);
   const [triaging, setTriaging] = useState(false);
   const [message, setMessage] = useState('');
+  const [confidenceBreakdown, setConfidenceBreakdown] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
@@ -98,6 +99,7 @@ export default function TicketDetailPage() {
   async function runTriage() {
     setTriaging(true);
     setMessage('');
+    setConfidenceBreakdown(null);
     try {
       const response = await fetch(`/api/run/ticket/${id}`, {
         method: 'POST',
@@ -107,6 +109,9 @@ export default function TicketDetailPage() {
 
       if (data.ok) {
         setMessage(`✅ ${data.summary} • Confidence: ${data.confidence} • Citations: ${data.citations?.length || 0}`);
+        if (data.outputs?.confidence_breakdown) {
+          setConfidenceBreakdown(data.outputs.confidence_breakdown);
+        }
         // Reload ticket to see updates
         setTimeout(loadTicket, 1000);
       } else {
@@ -208,6 +213,99 @@ export default function TicketDetailPage() {
           {message && (
             <div style={{ marginTop: '1rem', padding: '1rem', background: '#f5f5f5', borderRadius: '4px' }}>
               {message}
+              
+              {confidenceBreakdown && (
+                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e0e0e0' }}>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+                    Confidence Breakdown
+                  </div>
+                  <div style={{ display: 'grid', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.875rem', color: '#666' }}>📚 KB Articles</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ 
+                          width: '100px', 
+                          height: '8px', 
+                          background: '#e0e0e0', 
+                          borderRadius: '4px',
+                          overflow: 'hidden'
+                        }}>
+                          <div style={{ 
+                            width: `${confidenceBreakdown.kb_score * 100}%`, 
+                            height: '100%', 
+                            background: '#1a73e8'
+                          }} />
+                        </div>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 600, minWidth: '40px', textAlign: 'right' }}>
+                          {(confidenceBreakdown.kb_score * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.875rem', color: '#666' }}>🔧 Resolutions</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ 
+                          width: '100px', 
+                          height: '8px', 
+                          background: '#e0e0e0', 
+                          borderRadius: '4px',
+                          overflow: 'hidden'
+                        }}>
+                          <div style={{ 
+                            width: `${confidenceBreakdown.resolution_score * 100}%`, 
+                            height: '100%', 
+                            background: '#34a853'
+                          }} />
+                        </div>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 600, minWidth: '40px', textAlign: 'right' }}>
+                          {(confidenceBreakdown.resolution_score * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.875rem', color: '#666' }}>🎫 Similar Tickets</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ 
+                          width: '100px', 
+                          height: '8px', 
+                          background: '#e0e0e0', 
+                          borderRadius: '4px',
+                          overflow: 'hidden'
+                        }}>
+                          <div style={{ 
+                            width: `${confidenceBreakdown.similar_tickets_score * 100}%`, 
+                            height: '100%', 
+                            background: '#fbbc04'
+                          }} />
+                        </div>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 600, minWidth: '40px', textAlign: 'right' }}>
+                          {(confidenceBreakdown.similar_tickets_score * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ 
+                      marginTop: '0.5rem', 
+                      paddingTop: '0.5rem', 
+                      borderTop: '1px solid #ddd',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Overall</span>
+                      <span style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: 700,
+                        color: confidenceBreakdown.overall >= 0.7 ? '#34a853' : confidenceBreakdown.overall >= 0.4 ? '#fbbc04' : '#ea4335'
+                      }}>
+                        {(confidenceBreakdown.overall * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

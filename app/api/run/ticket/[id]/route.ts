@@ -178,7 +178,21 @@ export async function POST(
       citations.push(`tickets:${similarTickets[0].id}`);
     }
     
-    const confidence = citations.length >= 2 ? 'high' : 'low';
+    // Calculate confidence breakdown with normalized scores
+    const confidenceBreakdown = calculateConfidenceBreakdown(
+      kbArticles,
+      resolutions,
+      similarTickets
+    );
+    
+    // Overall confidence score (weighted average)
+    const confidenceScore = 
+      confidenceBreakdown.kb_score * 0.4 +
+      confidenceBreakdown.resolution_score * 0.3 +
+      confidenceBreakdown.similar_tickets_score * 0.3;
+    
+    // Label: high >= 0.7, medium >= 0.4, low < 0.4
+    const confidence = confidenceScore >= 0.7 ? 'high' : confidenceScore >= 0.4 ? 'medium' : 'low';
     
     let customerMessage = '';
     let internalNotes = '';
@@ -370,6 +384,7 @@ export async function POST(
         priority: classification.priority,
         draft_customer_message: customerMessage,
         internal_notes: internalNotes,
+        confidence_breakdown: confidenceBreakdown,
       },
       citations: formattedCitations,
       confidence: confidence as any,
@@ -405,6 +420,52 @@ export async function POST(
       { status: 500 }
     );
   }
+}
+
+// Calculate confidence breakdown with normalized scores
+function calculateConfidenceBreakdown(
+  kbArticles: Array<{ id: string; score: number; title: string }>,
+  resolutions: Array<{ id: string; score: number; title: string }>,
+  similarTickets: Array<{ id: string; score: number; subject: string }>
+) {
+  // Normalize scores to 0-1 range
+  // Elasticsearch scores vary greatly, so we use a sigmoid-like normalization
+  const normalize = (score: number) => {
+    if (!score || score <= 0) return 0;
+    // Scores above 1.0 are considered very good
+    return Math.min(1, score / 1.0);
+  };
+  
+  // Calculate KB score (average of top 3, or 0 if none)
+  let kb_score = 0;
+  if (kbArticles.length > 0) {
+    const topKB = kbArticles.slice(0, 3);
+    const avgScore = topKB.reduce((sum, a) => sum + (a.score || 0), 0) / topKB.length;
+    kb_score = normalize(avgScore);
+  }
+  
+  // Calculate resolution score (average of top 3, or 0 if none)
+  let resolution_score = 0;
+  if (resolutions.length > 0) {
+    const topRes = resolutions.slice(0, 3);
+    const avgScore = topRes.reduce((sum, r) => sum + (r.score || 0), 0) / topRes.length;
+    resolution_score = normalize(avgScore);
+  }
+  
+  // Calculate similar tickets score (average of top 3, or 0 if none)
+  let similar_tickets_score = 0;
+  if (similarTickets.length > 0) {
+    const topTickets = similarTickets.slice(0, 3);
+    const avgScore = topTickets.reduce((sum, t) => sum + (t.score || 0), 0) / topTickets.length;
+    similar_tickets_score = normalize(avgScore);
+  }
+  
+  return {
+    kb_score: parseFloat(kb_score.toFixed(3)),
+    resolution_score: parseFloat(resolution_score.toFixed(3)),
+    similar_tickets_score: parseFloat(similar_tickets_score.toFixed(3)),
+    overall: parseFloat((kb_score * 0.4 + resolution_score * 0.3 + similar_tickets_score * 0.3).toFixed(3)),
+  };
 }
 
 // Simple rule-based classification

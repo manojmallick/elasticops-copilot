@@ -7,6 +7,7 @@ export default function InboxPage() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [detecting, setDetecting] = useState(false);
+  const [simulating, setSimulating] = useState(false);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -61,6 +62,31 @@ export default function InboxPage() {
     }
   }
 
+  async function simulateSpike() {
+    setSimulating(true);
+    setMessage('');
+    try {
+      const response = await fetch('/api/demo/spike', {
+        method: 'POST',
+        headers: {
+          'x-demo-secret': process.env.NEXT_PUBLIC_DEMO_SECRET || 'demo-secret-2026',
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.ok) {
+        setMessage(`✅ ${data.message} (${data.inserted} error logs inserted)`);
+      } else {
+        setMessage(`❌ ${data.error || 'Failed to simulate spike'}`);
+      }
+    } catch (error: any) {
+      setMessage('❌ Error: ' + error.message);
+    } finally {
+      setSimulating(false);
+    }
+  }
+
   if (loading) {
     return <div className="loading">Loading inbox...</div>;
   }
@@ -73,13 +99,22 @@ export default function InboxPage() {
       </div>
 
       <div style={{ marginBottom: '2rem' }}>
-        <button
-          className="btn"
-          onClick={detectSpike}
-          disabled={detecting}
-        >
-          {detecting ? 'Detecting...' : '🔍 Detect Error Spike'}
-        </button>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <button
+            className="btn"
+            onClick={simulateSpike}
+            disabled={simulating}
+          >
+            {simulating ? 'Simulating...' : '🔥 Simulate Error Spike'}
+          </button>
+          <button
+            className="btn"
+            onClick={detectSpike}
+            disabled={detecting}
+          >
+            {detecting ? 'Detecting...' : '🔍 Detect Error Spike'}
+          </button>
+        </div>
         {message && (
           <div style={{ marginTop: '1rem', padding: '1rem', background: '#f5f5f5', borderRadius: '4px' }}>
             {message}
