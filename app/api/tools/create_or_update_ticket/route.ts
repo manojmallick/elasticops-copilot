@@ -33,7 +33,16 @@ export async function POST(request: NextRequest) {
       internal_notes,
       incident_ref,
       tags,
+      citations,
     } = body;
+    
+    // Enforce citation requirement (backup safety gate)
+    if (!citations || citations.length < 2) {
+      return NextResponse.json(
+        { error: 'At least 2 citations required before auto-updating tickets' },
+        { status: 400 }
+      );
+    }
     
     const now = new Date().toISOString();
     
