@@ -65,9 +65,10 @@ export async function GET(request: NextRequest) {
     
     // Transform aggregations into metrics object
     const metricsByName: Record<string, any> = {};
+    const aggs = response.aggregations as any;
     
-    if (response.aggregations?.by_metric_name?.buckets) {
-      response.aggregations.by_metric_name.buckets.forEach((bucket: any) => {
+    if (aggs?.by_metric_name?.buckets) {
+      aggs.by_metric_name.buckets.forEach((bucket: any) => {
         metricsByName[bucket.key] = {
           total: bucket.total_value.value,
           avg: bucket.avg_value.value,
@@ -78,8 +79,8 @@ export async function GET(request: NextRequest) {
     
     const categoryCounts: Record<string, number> = {};
     
-    if (response.aggregations?.by_category?.buckets) {
-      response.aggregations.by_category.buckets.forEach((bucket: any) => {
+    if (aggs?.by_category?.buckets) {
+      aggs.by_category.buckets.forEach((bucket: any) => {
         categoryCounts[bucket.key] = bucket.total_value.value;
       });
     }
