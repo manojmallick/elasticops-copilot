@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       started_at: new Date().toISOString(),
     };
     
-    const spikeResponse = await detectLogSpikes();
+    const spikeResponse = await detectLogSpikes() as any;
     const spikes = spikeResponse.values || [];
     
     steps.detect_spike.completed_at = new Date().toISOString();
