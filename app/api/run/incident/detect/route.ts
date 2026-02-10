@@ -185,7 +185,13 @@ export async function POST(request: NextRequest) {
     });
     
     // Build citations from resolutions
-    const citations = resolutions.map((r: any) => ({
+    type Citation = {
+      index: "kb-articles" | "tickets" | "resolutions" | "incidents" | "logs-app";
+      id: string;
+      highlight?: string;
+    };
+    
+    const citations: Citation[] = resolutions.map((r: any) => ({
       index: 'resolutions' as const,
       id: r.id,
       highlight: r.title,
