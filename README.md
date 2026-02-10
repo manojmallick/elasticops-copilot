@@ -152,6 +152,15 @@ Complete workflow observability in `ops-runs`:
 
 ## 📊 Demo Flow (3 Minutes)
 
+### 🔥 Generate Test Spike (Optional - 30s)
+To trigger incident detection, generate error logs:
+```bash
+node demo/generate-error-spike.js
+```
+This inserts 50 ERROR logs into `logs-app` (threshold is 40 errors/5min).
+
+**See full testing guide**: [`demo/TESTING_SPIKE_DETECTION.md`](./demo/TESTING_SPIKE_DETECTION.md)
+
 ### 1. Incident Detection (45s)
 - Go to `/inbox`
 - Click "Detect Error Spike"
