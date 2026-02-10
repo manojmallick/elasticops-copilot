@@ -90,6 +90,7 @@ export async function POST(
     
     const similarTickets = dedupeResponse.hits.hits.map((hit: any) => ({
       id: hit._id,
+      ticket_id: hit._source?.ticket_id || hit._id,
       score: hit._score,
       subject: hit._source?.subject,
       status: hit._source?.status,
