@@ -2,13 +2,13 @@
 
 **Multi-Agent Support Automation + Incident Awareness**
 
-A hackathon-ready demo showcasing intelligent support automation powered by Elasticsearch. Features automatic incident detection using ES|QL, AI-driven ticket triage with hybrid search, semantic deduplication, optional LLM integration (Google Gemini), and complete workflow observability with **Agent Builder** proof artifacts.
+Intelligent support automation powered by Elasticsearch. Features automatic incident detection using ES|QL, AI-driven ticket triage with hybrid search, semantic deduplication, optional LLM integration (Google Gemini), and complete workflow observability with Agent Builder integration.
 
 ## 🌟 New Features
 
 ✅ **Dual Mode**: Works with Elastic Cloud OR local Docker  
 ✅ **Vercel Deployment**: Production-ready deployment with Agent Builder webhooks  
-✅ **Agent Builder Artifacts**: Complete proof documents for judges  
+✅ **Agent Builder Integration**: Complete documentation and workflow examples  
 ✅ **Citation Gating**: Requires 2+ sources before auto-updating tickets  
 ✅ **Confidence Scoring**: Three-path decision logic (auto/duplicate/review)  
 
@@ -16,10 +16,10 @@ See [`CHANGELOG.md`](./CHANGELOG.md) for complete enhancement details.
 
 ## 🚀 Deployment Options
 
-### Option 1: Live Cloud Demo (Recommended for Judges)
+### Option 1: Live Cloud Demo
 Production deployment on Vercel + Elastic Cloud with Agent Builder webhook integration:
 
-- 🌐 **Live URL**: No local setup required for judges
+- 🌐 **Live URL**: Accessible from anywhere
 - 🤖 **Agent Builder**: Webhook connector allows agents to create tickets from Kibana
 - 🔒 **Secure**: Webhook secret verification
 - ⚡ **Fast**: Serverless functions, global CDN
@@ -27,8 +27,8 @@ Production deployment on Vercel + Elastic Cloud with Agent Builder webhook integ
 **Quick Deploy**: Follow [`VERCEL_DEPLOYMENT.md`](./VERCEL_DEPLOYMENT.md) (~30 min setup)  
 **Quick Setup**: Follow [`agent_builder/AGENT_BUILDER_SETUP.md`](./agent_builder/AGENT_BUILDER_SETUP.md) (~10 min config)
 
-### Option 2: Local Development/Fallback
-Use Docker Compose for local development or as a fallback if cloud expires:
+### Option 2: Local Development
+Use Docker Compose for local development:
 
 ```bash
 ./demo/bootstrap.sh
@@ -57,18 +57,16 @@ cp .env.example .env.local
 
 See [`CLOUD_SETUP.md`](./CLOUD_SETUP.md) for detailed cloud setup instructions.
 
-## 🤖 Agent Builder Proof
+## 🤖 Agent Builder Integration
 
-This project includes comprehensive **Agent Builder** artifacts in the [`agent_builder/`](./agent_builder/) folder:
+This project includes comprehensive **Agent Builder** configuration in the [`agent_builder/`](./agent_builder/) folder:
 
 - **[ES|QL Tool](./agent_builder/tools/detect_error_spikes.esql)** - Error spike detection query
 - **[kNN Search Tools](./agent_builder/tools/)** - KB articles, tickets, resolutions
 - **[Multi-Step Workflow](./agent_builder/workflows/ticket_upsert_workflow.md)** - 7-step triage process
 - **[Agent Instructions](./agent_builder/agent_instructions.md)** - System prompt with JSON schema
 - **[Connectors](./agent_builder/connectors.md)** - Gemini LLM + webhook configs
-- **[Demo Script](./agent_builder/demo_steps.md)** - 5-minute judge walkthrough
-
-**For Judges**: Start with [`agent_builder/demo_steps.md`](./agent_builder/demo_steps.md) for a complete demonstration showing all Agent Builder features in action.
+- **[Demo Script](./agent_builder/demo_steps.md)** - 5-minute walkthrough
 
 ## 🎯 One-Click Demo
 

@@ -2,7 +2,7 @@
 
 ## ✅ Full Repository Built Successfully
 
-The **ElasticOps Copilot** hackathon project is now complete with **Elastic Cloud support**, **Agent Builder proof artifacts**, and **Gemini LLM integration**.
+The **ElasticOps Copilot** project is now complete with **Elastic Cloud support**, **Agent Builder integration**, and **Gemini LLM integration**.
 
 ---
 
@@ -12,7 +12,7 @@ The **ElasticOps Copilot** hackathon project is now complete with **Elastic Clou
 ✅ **Dual Mode**: Works with Elastic Cloud OR local Docker  
 ✅ **Cloud Authentication**: Cloud ID + API key support  
 ✅ **LLM Integration**: Google Gemini for intelligent drafting  
-✅ **Agent Builder Artifacts**: Complete proof folder for judges  
+✅ **Agent Builder Integration**: Complete configuration and documentation  
 ✅ **Citation Gating**: Requires 2+ sources before auto-updates  
 ✅ **Confidence Scoring**: Three-path decision logic  
 
@@ -56,7 +56,7 @@ See [`CHANGELOG.md`](./CHANGELOG.md) for complete details.
 - Complete styling system
 - Interactive workflow buttons
 
-**Agent Builder Artifacts (9 files)** ✨ **NEW**
+**Agent Builder Configuration (9 files)** ✨ **NEW**
 - agent_builder/README.md - Overview
 - agent_builder/agent_instructions.md - System prompt & JSON schema
 - agent_builder/connectors.md - Gemini + webhook configs
@@ -65,7 +65,7 @@ See [`CHANGELOG.md`](./CHANGELOG.md) for complete details.
 - agent_builder/tools/search_tickets.md - Duplicate detection tool
 - agent_builder/tools/search_resolutions.md - Resolution retrieval tool
 - agent_builder/workflows/ticket_upsert_workflow.md - Complete workflow
-- agent_builder/demo_steps.md - 5-minute judge walkthrough
+- agent_builder/demo_steps.md - 5-minute walkthrough
 
 **Documentation (11 files)**
 - ✨ **NEW**: CHANGELOG.md - All enhancement details
@@ -78,7 +78,7 @@ See [`CHANGELOG.md`](./CHANGELOG.md) for complete details.
 
 ---
 
-## 🚀 Quick Start for Judges
+## 🚀 Quick Start
 
 ### One Command Setup
 
@@ -149,14 +149,14 @@ This will:
 - Records efficiency metrics (duplicates prevented, time saved)
 - Complete ops-run timeline
 
-### 3. Agent Builder Artifacts ✨ **NEW**
-Complete proof folder showing:
+### 3. Agent Builder Integration ✨ **NEW**
+Complete configuration showing:
 - **ES|QL Tool**: detect_error_spikes.esql
 - **kNN Tools**: search_kb_articles, search_tickets, search_resolutions
 - **Workflow**: 7-step ticket triage with decision tree
 - **System Prompt**: JSON schema + citation requirements
 - **Connectors**: Gemini LLM + webhook configs
-- **Demo Script**: 5-minute judge walkthrough
+- **Demo Script**: 5-minute walkthrough
 
 ### 4. Search Explorer
 - **Hybrid mode**: KB articles or tickets
@@ -263,12 +263,12 @@ node data/generator/generate_synthetic.js
 
 ---
 
-## 🏆 Why This is Judge-Ready
+## 🏆 Key Features
 
 ✅ **One-command setup** - No manual configuration  
 ✅ **One-command demo** - See everything in 30 seconds  
 ✅ **Dual mode** - Works with Elastic Cloud OR local Docker ✨  
-✅ **Agent Builder proof** - Complete artifacts folder with ES|QL tools, workflows, connectors ✨  
+✅ **Agent Builder integration** - Complete configuration with ES|QL tools, workflows, connectors ✨  
 ✅ **LLM integration** - Optional Gemini with citation gating ✨  
 ✅ **No external APIs required** - Deterministic embeddings (LLM optional)  
 ✅ **Reproducible** - Same results every time  
@@ -301,7 +301,7 @@ elasticops-copilot/
 │   ├── embed.ts
 │   ├── esql.ts
 │   └── searchTemplates.ts
-├── agent_builder/              # ✨ NEW: Agent Builder proof (9 files)
+├── agent_builder/              # ✨ NEW: Agent Builder configuration (9 files)
 │   ├── README.md
 │   ├── agent_instructions.md
 │   ├── connectors.md
@@ -336,49 +336,34 @@ elasticops-copilot/
 
 ## 🎬 Next Steps
 
-### For You
 The repository is complete and ready. You can now:
 1. Test locally: `./demo/bootstrap.sh`
 2. Test with cloud: Update `.env.local` with your Cloud ID + API key, then run `./demo/bootstrap.sh`
 3. Run the demo: `./demo/run-demo.sh`
-4. Verify Agent Builder proof: Browse `agent_builder/` folder
-5. Push to GitHub for judges
-6. Add screenshots to `demo/screenshots/` (optional)
-
-### For Judges
-They can:
-1. Clone the repo
-2. **Option A (Local)**: Run `./demo/bootstrap.sh` (uses Docker)
-3. **Option B (Cloud)**: Edit `.env.local` with their Cloud credentials, then run `./demo/bootstrap.sh`
-4. Wait < 5 minutes
-5. Open http://localhost:3000
-6. Click through the demo flows
-7. **Review Agent Builder proof**: Browse `agent_builder/` folder
-8. Or run `./demo/run-demo.sh` for automated demo
+4. Browse Agent Builder integration: Check `agent_builder/` folder
+5. Add screenshots to `demo/screenshots/` if desired
 
 ---
 
-## 📚 Key Documentation for Judges
+## 📚 Key Documentation
 
 1. **[README.md](./README.md)** - Overview, quick start, features
 2. **[agent_builder/demo_steps.md](./agent_builder/demo_steps.md)** - 5-minute walkthrough showing all Agent Builder features
-3. **[agent_builder/README.md](./agent_builder/README.md)** - Agent Builder artifacts overview
+3. **[agent_builder/README.md](./agent_builder/README.md)** - Agent Builder configuration overview
 4. **[CLOUD_SETUP.md](./CLOUD_SETUP.md)** - Complete cloud setup guide
 5. **[CHANGELOG.md](./CHANGELOG.md)** - All enhancements for v2.0
 6. **[demo/ARCHITECTURE.md](./demo/ARCHITECTURE.md)** - System design details
 
 ---
 
-## 🎉 Status: ✅ READY FOR SUBMISSION (v2.0)
+## 🎉 Status: ✅ COMPLETE (v2.0)
 
-**Enhanced with:**
+**Features:**
 - ✅ Elastic Cloud support (dual-mode)
 - ✅ LLM integration (Google Gemini)
-- ✅ Agent Builder proof artifacts
+- ✅ Agent Builder integration
 - ✅ Citation gating + confidence scoring
 - ✅ Comprehensive documentation
 
-**No additional work needed.** The repository is fully functional, cloud-ready, and includes irrefutable Agent Builder proof.
-
-Good luck with your hackathon! 🚀
+The repository is fully functional and cloud-ready.
 

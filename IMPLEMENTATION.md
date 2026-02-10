@@ -12,7 +12,7 @@
 
 ### Docker & Elasticsearch Infrastructure ✅
 - [x] docker-compose.yml (Elasticsearch 8.11 + Kibana)
-- [x] Security disabled for hackathon ease
+- [x] Security disabled for ease of use
 - [x] 7 index mappings with dense_vector fields (384 dims, cosine similarity):
   - [x] kb-articles.json
   - [x] tickets.json
@@ -100,7 +100,7 @@
 - [x] demo/architecture.mmd - Mermaid architecture diagram
 - [x] demo/ARCHITECTURE.md - Instructions for generating PNG
 - [x] demo/screenshots/ - Empty folder for screenshots
-- [x] README.md - Comprehensive judge-friendly documentation
+- [x] README.md - Comprehensive documentation
   - [x] 30-second skim friendly
   - [x] One-command quickstart
   - [x] Where Elasticsearch is used section
@@ -154,7 +154,7 @@
 
 ## 🚀 Ready to Run!
 
-The complete repository is ready for judges. To test:
+The complete repository is ready. To test:
 
 ```bash
 ./demo/bootstrap.sh
@@ -216,7 +216,7 @@ node data/generator/generate_synthetic.js
 npx tsc --noEmit
 ```
 
-## 🎯 What Makes This Judge-Ready
+## 🎯 Key Features
 
 ✅ **One-command setup** - `./demo/bootstrap.sh` does everything  
 ✅ **One-command demo** - `./demo/run-demo.sh` shows all features  
@@ -227,7 +227,7 @@ npx tsc --noEmit
 ✅ **Complete docs** - README explains everything  
 ✅ **Real Elasticsearch** - Uses ES|QL, kNN, hybrid search, aggregations  
 ✅ **Production patterns** - Metrics, audit trails, workflow orchestration  
-✅ **No security overhead** - Disabled for easy hackathon demo  
+✅ **No security overhead** - Disabled for easy demo  
 
 ## 📊 File Count Summary
 

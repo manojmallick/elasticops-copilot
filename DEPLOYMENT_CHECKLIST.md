@@ -18,7 +18,7 @@ Quick checklist for deploying ElasticOps Copilot to Vercel with Agent Builder in
 
 ### GitHub Setup
 - [ ] Repository initialized (`git init`)
-- [ ] GitHub repo created (public, no README)
+- [ ] GitHub repo created
 - [ ] Code pushed to GitHub (`git push origin main`)
 - [ ] MIT license visible in repo
 
@@ -149,7 +149,7 @@ Users can't log in. Create an authentication ticket.
 - [ ] Deployment section added
 - [ ] Link to `VERCEL_DEPLOYMENT.md`
 
-### Screenshots for Submission
+### Screenshots
 Take screenshots of:
 - [ ] Vercel deployment success page
 - [ ] Vercel environment variables (hide sensitive values)
@@ -161,39 +161,9 @@ Take screenshots of:
 
 ---
 
-## Submission Preparation
-
-### DevPost Submission
-- [ ] Project title: `ElasticOps Copilot`
-- [ ] Tagline prepared (< 60 chars)
-- [ ] Description written (explains Agent Builder integration)
-- [ ] Screenshots uploaded (7-8 images)
-- [ ] Video demo link (optional but recommended)
-- [ ] GitHub repo link added (public)
-- [ ] Live demo link added (Vercel URL)
-- [ ] Technologies listed:
-  - [ ] Elasticsearch
-  - [ ] ES|QL
-  - [ ] Agent Builder
-  - [ ] kNN Vector Search
-  - [ ] Next.js
-  - [ ] Vercel
-  - [ ] TypeScript
-
-### Proof Documents
-In repo, ensure these exist:
-- [ ] `agent_builder/` folder (9 files)
-- [ ] `VERCEL_DEPLOYMENT.md` (complete guide)
-- [ ] `agent_builder/AGENT_BUILDER_SETUP.md` (quick reference)
-- [ ] `CLOUD_SETUP.md` (cloud setup guide)
-- [ ] Screenshots in `demo/screenshots/`
-
----
-
 ## Final Validation
 
-### Judge Experience Test
-Imagine you're a judge. Verify:
+### Testing Options
 
 **Option 1: Live Cloud Demo**
 - [ ] Visit Vercel URL → Works without setup
@@ -202,8 +172,7 @@ Imagine you're a judge. Verify:
 - [ ] No errors in browser console
 
 **Option 2: Agent Builder Demo**
-- [ ] Judge logs into your Elastic Cloud (provide guest credentials)
-- [ ] Navigate to Agent Builder
+- [ ] Navigate to Agent Builder in Kibana
 - [ ] See `create_or_update_ticket` tool
 - [ ] Test with a prompt
 - [ ] Ticket appears in app
@@ -239,11 +208,10 @@ Imagine you're a judge. Verify:
 
 ✅ All boxes checked above  
 ✅ Live demo works reliably  
-✅ Agent Builder integration proven  
+✅ Agent Builder integration working  
 ✅ Documentation is comprehensive  
 ✅ Screenshots show all features  
 ✅ GitHub repo is public with MIT license  
-✅ Submission meets all Devpost requirements  
 
 ---
 
@@ -271,8 +239,6 @@ If issues arise:
 
 ---
 
-**Status After Completion**: 🚀 Ready for Judging  
+**Status After Completion**: 🚀 Ready  
 **Deployment Mode**: Cloud + Agent Builder  
 **Fallback**: Local Docker (documented)
-
-Good luck! 🎉

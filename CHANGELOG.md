@@ -8,7 +8,7 @@ This document tracks all changes made to support **Elastic Cloud**, **Agent Buil
 
 **Date**: January 2025  
 **Version**: 2.0  
-**Goal**: Add dual-mode support (cloud/local), LLM-powered drafting, and comprehensive Agent Builder proof
+**Goal**: Add dual-mode support (cloud/local), LLM-powered drafting, and comprehensive Agent Builder integration
 
 ---
 
@@ -26,14 +26,14 @@ This document tracks all changes made to support **Elastic Cloud**, **Agent Buil
 - ✅ Fallback to deterministic drafting if LLM fails
 - ✅ Optional configuration (works without LLM)
 
-### 3. Agent Builder Artifacts
-- ✅ Complete folder structure with proof documents
+### 3. Agent Builder Configuration
+- ✅ Complete folder structure with documentation
 - ✅ ES|QL tool definition
 - ✅ kNN tool configurations
 - ✅ Multi-step workflow documentation
 - ✅ System prompt and instructions
 - ✅ Connector configurations
-- ✅ Judge demo script
+- ✅ Demo walkthrough script
 
 ### 4. Enhanced Ticket Triage
 - ✅ LLM-powered response drafting
@@ -285,7 +285,7 @@ if (ELASTIC_MODE === 'cloud' && ELASTIC_CLOUD_ID && ELASTIC_API_KEY) {
 #### `agent_builder/README.md`
 **Status**: NEW  
 **Purpose**: Overview of Agent Builder usage  
-**Contents**: What Agent Builder is, what tools we used, file structure, verification proof
+**Contents**: What Agent Builder is, what tools we used, file structure, verification
 
 #### `agent_builder/agent_instructions.md`
 **Status**: NEW  
@@ -351,15 +351,15 @@ if (ELASTIC_MODE === 'cloud' && ELASTIC_CLOUD_ID && ELASTIC_API_KEY) {
 
 #### `agent_builder/demo_steps.md`
 **Status**: NEW  
-**Purpose**: Judge demo script  
+**Purpose**: Demo walkthrough script  
 **Contents**:
 - 5-minute walkthrough
 - Part 1: Setup verification
 - Part 2: Tool demonstrations
 - Part 3: Workflow execution
-- Part 4: Artifacts review
+- Part 4: Configuration review
 - Part 5: API testing
-- Proof points for judges
+- Key features
 - Troubleshooting
 - FAQ
 
