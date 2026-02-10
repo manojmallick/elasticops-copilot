@@ -3,6 +3,33 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 
+function MessageWithLinks({ text }: { text: string }) {
+  // Convert URLs in text to clickable links
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  
+  return (
+    <div style={{ whiteSpace: 'pre-wrap' }}>
+      {parts.map((part, idx) => {
+        if (part.match(urlRegex)) {
+          return (
+            <a 
+              key={idx}
+              href={part}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: '#1a73e8', textDecoration: 'underline' }}
+            >
+              {part}
+            </a>
+          );
+        }
+        return <span key={idx}>{part}</span>;
+      })}
+    </div>
+  );
+}
+
 export default function TicketDetailPage() {
   const params = useParams();
   const id = params?.id as string;
@@ -107,7 +134,7 @@ export default function TicketDetailPage() {
         {ticket.customer_message && (
           <div className="section">
             <h3 className="section-title">Customer Message</h3>
-            <p style={{ whiteSpace: 'pre-wrap' }}>{ticket.customer_message}</p>
+            <MessageWithLinks text={ticket.customer_message} />
           </div>
         )}
 

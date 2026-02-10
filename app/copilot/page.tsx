@@ -156,7 +156,7 @@ function ResultPanel({ result }: { result: CopilotRunResponse | null }) {
             {result.outputs.draft_customer_message ? (
               <div style={{ border: '1px solid #e0e0e0', borderRadius: '4px', padding: '0.75rem' }}>
                 <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Draft customer message</div>
-                <div style={{ whiteSpace: 'pre-wrap' }}>{result.outputs.draft_customer_message}</div>
+                <MessageWithLinks text={result.outputs.draft_customer_message} />
               </div>
             ) : null}
 
@@ -190,6 +190,33 @@ async function postJSON<T>(url: string, body: any): Promise<T> {
     throw new Error(json?.error || `Request failed: ${res.status} ${res.statusText}`);
   }
   return json as T;
+}
+
+function MessageWithLinks({ text }: { text: string }) {
+  // Convert URLs in text to clickable links
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  
+  return (
+    <div style={{ whiteSpace: 'pre-wrap' }}>
+      {parts.map((part, idx) => {
+        if (part.match(urlRegex)) {
+          return (
+            <a 
+              key={idx}
+              href={part}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: '#1a73e8', textDecoration: 'underline' }}
+            >
+              {part}
+            </a>
+          );
+        }
+        return <span key={idx}>{part}</span>;
+      })}
+    </div>
+  );
 }
 
 export default function CopilotPage() {
