@@ -259,7 +259,7 @@ export async function POST(
       
       steps.act.completed_at = new Date().toISOString();
       steps.act.action = 'flagged_for_review';
-      steps.act.reason = `Low confidence (${finalConfidence}) or insufficient citations (${citations.length})`;
+      steps.act.reason = `Low confidence (${confidence}) or insufficient citations (${citations.length})`;
     }
     
     // Step 8: Write metrics
