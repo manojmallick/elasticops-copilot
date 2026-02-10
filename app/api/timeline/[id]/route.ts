@@ -31,7 +31,7 @@ export async function GET(
     
     return NextResponse.json({
       id: run._id,
-      ...run._source,
+      ...(run._source || {}),
     });
     
   } catch (error: any) {

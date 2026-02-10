@@ -310,10 +310,9 @@ export async function POST(
       run_id: runId,
       classification,
       isDuplicate,
-      confidence: finalConfidence,
+      confidence,
       citations,
       updated: shouldUpdate,
-      usedLLM: usedLLM && !!llmDraft,
     });
     
   } catch (error: any) {
