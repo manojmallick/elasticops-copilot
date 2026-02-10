@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { Client } from "@elastic/elasticsearch";
 import { z } from "zod";
 
-export const runtime = "nodejs"; // IMPORTANT on Vercel (not edge)
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ELASTIC_MODE = process.env.ELASTIC_MODE || 'local';
@@ -34,46 +34,17 @@ if (ELASTIC_MODE === 'cloud' && ELASTIC_CLOUD_ID && ELASTIC_API_KEY) {
 
 const client = new Client(config);
 
-const AuthHeaderSchema = z
-  .string()
-  .regex(/^Bearer\s+.+$/i, "Missing Bearer token");
-
+// --- auth ---
 function assertAuth(req: NextRequest) {
   const auth = req.headers.get("authorization") || "";
-  AuthHeaderSchema.parse(auth);
   const token = auth.replace(/^Bearer\s+/i, "").trim();
   if (!process.env.MCP_AUTH_TOKEN) throw new Error("MCP_AUTH_TOKEN not set");
-  if (token !== process.env.MCP_AUTH_TOKEN) {
+  if (!auth.toLowerCase().startsWith("bearer ") || token !== process.env.MCP_AUTH_TOKEN) {
     throw new Error("Unauthorized");
   }
 }
 
-/**
- * MCP Tool input schema
- */
-const CreateOrUpdateTicketInput = z.object({
-  mode: z.enum(["create", "update"]),
-  ticket_id: z.string().nullable().optional(),
-  fields: z.object({
-    subject: z.string().min(3),
-    description: z.string().min(5),
-    status: z.enum(["open", "resolved", "closed"]).optional(),
-    priority: z.enum(["normal", "p1", "p2", "p3"]).optional(),
-    citations: z.array(z.string().min(3)).default([]),
-  }),
-});
-
-type JsonRpcReq =
-  | { jsonrpc: "2.0"; id: string | number | null; method: "tools/list"; params?: any }
-  | { jsonrpc: "2.0"; id: string | number | null; method: "tools/call"; params: any };
-
-/**
- * Helper: write SSE event
- */
-function sseEvent(event: string, data: any) {
-  return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-}
-
+// --- MCP tool registry ---
 const TOOLS = [
   {
     name: "create_or_update_ticket",
@@ -99,19 +70,38 @@ const TOOLS = [
       required: ["mode", "fields"],
     },
   },
-];
+] as const;
 
-async function createOrUpdateTicket(raw: unknown) {
-  const parsed = CreateOrUpdateTicketInput.parse(raw);
+// --- tool input schema ---
+const CreateOrUpdateTicketInput = z.object({
+  mode: z.enum(["create", "update"]),
+  ticket_id: z.string().nullable().optional(),
+  fields: z.object({
+    subject: z.string().min(3),
+    description: z.string().min(5),
+    status: z.enum(["open", "resolved", "closed"]).optional(),
+    priority: z.enum(["normal", "p1", "p2", "p3"]).optional(),
+    citations: z.array(z.string().min(3)).default([]),
+  }),
+});
+
+async function createOrUpdateTicket(args: unknown) {
+  const parsed = CreateOrUpdateTicketInput.parse(args);
 
   const citations = parsed.fields.citations || [];
   if (citations.length < 2) {
+    // MCP tool results should be returned in `content`
     return {
-      ok: false,
-      confidence: "low",
-      error: "CITATION_RULE: need at least 2 citations before writing",
-      recommended_action:
-        "Run search tools to gather more evidence (prefer 2 different indices).",
+      content: [
+        {
+          type: "text",
+          text:
+            "CITATION_RULE: Not enough citations to create/update ticket. " +
+            "Need >= 2 citations (preferably from 2 different indices).",
+        },
+      ],
+      isError: true,
+      meta: { confidence: "low", citations },
     };
   }
 
@@ -136,151 +126,137 @@ async function createOrUpdateTicket(raw: unknown) {
     });
 
     return {
-      ok: true,
-      mode: "create",
-      ticket_id: result._id,
-      index: result._index,
-      confidence: "high",
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            { ok: true, mode: "create", ticket_id: result._id, index: result._index, citations },
+            null,
+            2
+          ),
+        },
+      ],
+      isError: false,
+      meta: { confidence: "high" },
     };
   }
 
   // update
   if (!parsed.ticket_id) {
     return {
-      ok: false,
-      confidence: "low",
-      error: "ticket_id required for update",
+      content: [{ type: "text", text: "ticket_id is required for update mode" }],
+      isError: true,
+      meta: { confidence: "low" },
     };
   }
-
-  const partial = {
-    ...parsed.fields,
-    citations,
-    updated_at: now,
-    source: "mcp",
-  };
 
   await client.update({
     index: "tickets",
     id: parsed.ticket_id,
-    doc: partial,
+    doc: {
+      ...parsed.fields,
+      citations,
+      updated_at: now,
+      source: "mcp",
+    },
     refresh: "wait_for",
   });
 
   return {
-    ok: true,
-    mode: "update",
-    ticket_id: parsed.ticket_id,
-    index: "tickets",
-    confidence: "high",
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(
+          { ok: true, mode: "update", ticket_id: parsed.ticket_id, index: "tickets", citations },
+          null,
+          2
+        ),
+      },
+    ],
+    isError: false,
+    meta: { confidence: "high" },
   };
 }
 
-/**
- * GET: SSE endpoint (Elastic MCP client can connect and stream)
- * POST: JSON-RPC over HTTP and stream response as SSE
- */
-export async function GET(req: NextRequest) {
-  // Optional: allow GET for "health" or SSE handshake
-  try {
-    assertAuth(req);
-  } catch (e: any) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+// --- JSON-RPC types ---
+type JsonRpc = {
+  jsonrpc: "2.0";
+  id?: string | number | null; // notifications won't have id
+  method: string;
+  params?: any;
+};
 
-  const stream = new ReadableStream({
-    start(controller) {
-      // Basic "hello" event
-      controller.enqueue(
-        new TextEncoder().encode(
-          sseEvent("ready", { ok: true, server: "elasticops-mcp", tools: TOOLS.map(t => t.name) })
-        )
-      );
-      controller.close();
-    },
-  });
+function ok(id: any, result: any) {
+  return Response.json({ jsonrpc: "2.0", id, result });
+}
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-    },
-  });
+function err(id: any, code: number, message: string, data?: any) {
+  return Response.json({ jsonrpc: "2.0", id, error: { code, message, data } });
 }
 
 export async function POST(req: NextRequest) {
   try {
     assertAuth(req);
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+    return new Response("Unauthorized", { status: 401 });
   }
 
-  let msg: JsonRpcReq;
+  let msg: JsonRpc;
   try {
-    msg = (await req.json()) as JsonRpcReq;
+    msg = (await req.json()) as JsonRpc;
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 });
+    return new Response("Invalid JSON", { status: 400 });
   }
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      const enc = new TextEncoder();
+  // 1) REQUIRED by Elastic MCP connector: initialize
+  if (msg.method === "initialize") {
+    const protocolVersion = msg.params?.protocolVersion ?? "2024-11-05";
 
-      // helper to send JSON-RPC response via SSE
-      const send = (event: string, payload: any) => controller.enqueue(enc.encode(sseEvent(event, payload)));
+    // Response shape matches MCP spec + Elastic example
+    return ok(msg.id, {
+      serverInfo: { name: "elasticops-mcp", version: "1.0.0" },
+      capabilities: { tools: { listChanged: true } },
+      protocolVersion,
+    });
+  }
 
-      try {
-        if (msg.method === "tools/list") {
-          send("message", { jsonrpc: "2.0", id: msg.id, result: { tools: TOOLS } });
-          controller.close();
-          return;
-        }
+  // 2) Notification (no response expected)
+  if (msg.method === "notifications/initialized") {
+    return new Response(null, { status: 204 });
+  }
 
-        if (msg.method === "tools/call") {
-          const toolName = msg.params?.name;
-          const args = msg.params?.arguments;
+  // 3) Tool discovery
+  if (msg.method === "tools/list") {
+    return ok(msg.id, { tools: TOOLS });
+  }
 
-          if (toolName !== "create_or_update_ticket") {
-            send("message", {
-              jsonrpc: "2.0",
-              id: msg.id,
-              error: { code: -32601, message: `Unknown tool: ${toolName}` },
-            });
-            controller.close();
-            return;
-          }
+  // 4) Tool execution
+  if (msg.method === "tools/call") {
+    const toolName = msg.params?.name;
+    const args = msg.params?.arguments;
 
-          // Execute tool
-          const result = await createOrUpdateTicket(args);
+    if (toolName !== "create_or_update_ticket") {
+      return err(msg.id, -32601, `Unknown tool: ${toolName}`);
+    }
 
-          send("message", { jsonrpc: "2.0", id: msg.id, result });
-          controller.close();
-          return;
-        }
+    try {
+      const result = await createOrUpdateTicket(args);
+      return ok(msg.id, result);
+    } catch (e: any) {
+      return err(msg.id, -32000, e?.message ?? "Tool execution failed");
+    }
+  }
 
-        send("message", {
-          jsonrpc: "2.0",
-          id: (msg as any).id ?? null,
-          error: { code: -32601, message: `Unknown method: ${(msg as any).method}` },
-        });
-        controller.close();
-      } catch (err: any) {
-        send("message", {
-          jsonrpc: "2.0",
-          id: (msg as any)?.id ?? null,
-          error: { code: -32000, message: err?.message ?? "Server error" },
-        });
-        controller.close();
-      }
-    },
-  });
+  // unknown method
+  return err(msg.id ?? null, -32601, `Unknown method: ${msg.method}`);
+}
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-    },
-  });
+export async function GET(req: NextRequest) {
+  // optional health check
+  try {
+    assertAuth(req);
+  } catch {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  return Response.json({ ok: true, name: "elasticops-mcp", protocolVersion: "2024-11-05" });
 }
