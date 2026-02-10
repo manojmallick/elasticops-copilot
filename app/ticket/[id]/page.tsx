@@ -30,6 +30,43 @@ function MessageWithLinks({ text }: { text: string }) {
   );
 }
 
+function FormattedInternalNotes({ text }: { text: string }) {
+  // Parse internal notes format: "AUTO-TRIAGE: Category=billing, Severity=critical. Found 4 relevant sources. Confidence=high."
+  const parts = text.split('. ');
+  
+  return (
+    <div style={{ color: '#666', fontStyle: 'italic', lineHeight: '1.8' }}>
+      {parts.map((part, idx) => {
+        // Check if this part contains key=value pairs
+        if (part.includes('=')) {
+          const items = part.split(/,\s*/);
+          return (
+            <div key={idx} style={{ marginBottom: '0.5rem' }}>
+              {items.map((item, i) => {
+                const [key, value] = item.split('=');
+                if (key && value) {
+                  return (
+                    <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                      <span style={{ fontWeight: 600, minWidth: '120px' }}>{key.trim()}:</span>
+                      <span>{value.trim()}</span>
+                    </div>
+                  );
+                }
+                return <div key={i}>{item}</div>;
+              })}
+            </div>
+          );
+        }
+        return (
+          <div key={idx} style={{ marginBottom: '0.5rem' }}>
+            {part.trim()}{idx < parts.length - 1 ? '.' : ''}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function TicketDetailPage() {
   const params = useParams();
   const id = params?.id as string;
@@ -141,9 +178,7 @@ export default function TicketDetailPage() {
         {ticket.internal_notes && (
           <div className="section">
             <h3 className="section-title">Internal Notes</h3>
-            <p style={{ whiteSpace: 'pre-wrap', color: '#666', fontStyle: 'italic' }}>
-              {ticket.internal_notes}
-            </p>
+            <FormattedInternalNotes text={ticket.internal_notes} />
           </div>
         )}
 

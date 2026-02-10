@@ -43,12 +43,12 @@ export default function InboxPage() {
 
       const data = await response.json();
 
-      if (data.found) {
-        setMessage(`✅ Spike detected! Created incident ${data.incident_id} and ticket ${data.ticket_id}`);
+      if (data.ok && data.entities?.incident_id) {
+        setMessage(`✅ Spike detected! Created incident ${data.entities.incident_id}${data.entities.ticket_id ? ' and ticket ' + data.entities.ticket_id : ''}`);
         // Reload data to show new incident/ticket
         setTimeout(loadData, 1000);
       } else {
-        setMessage('ℹ️ ' + data.message);
+        setMessage('ℹ️ ' + (data.summary || data.message || 'No spikes detected'));
       }
     } catch (error: any) {
       setMessage('❌ Error: ' + error.message);
