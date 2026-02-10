@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { citationUrl, citationLabel } from "@/lib/citationLinks";
 
 type CopilotCitation = {
   index: "kb-articles" | "tickets" | "resolutions" | "incidents" | "logs-app";
@@ -106,7 +107,19 @@ function ResultPanel({ result }: { result: CopilotRunResponse | null }) {
               <div key={i} style={{ border: '1px solid #e0e0e0', borderRadius: '4px', padding: '0.75rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                   <span style={{ fontWeight: 600 }}>{c.index}</span>
-                  <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: '#666' }}>{c.id}</span>
+                  <a 
+                    href={citationUrl(c.index, c.id)}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ 
+                      fontFamily: 'monospace', 
+                      fontSize: '0.85rem', 
+                      color: '#1a73e8',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    {c.id} →
+                  </a>
                 </div>
                 {c.highlight ? (
                   <div style={{ fontSize: '0.85rem', color: '#666' }}>{c.highlight}</div>

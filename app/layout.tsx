@@ -16,7 +16,9 @@ export default function RootLayout({
       <body>
         <nav className="navbar">
           <div className="nav-container">
-            <h1 className="nav-title">⚡ ElasticOps Copilot</h1>
+            <a href="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <h1 className="nav-title">⚡ ElasticOps Copilot</h1>
+            </a>
             <div className="nav-links">
               <a href="/copilot">Copilot</a>
               <a href="/inbox">Inbox</a>

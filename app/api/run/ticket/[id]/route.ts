@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { esClient } from '@/lib/elastic';
 import { generateEmbedding } from '@/lib/embed';
 import { buildTicketDedupeSearch, buildHybridSearch, buildResolutionSearch } from '@/lib/searchTemplates';
+import { citationUrl } from '@/lib/citationLinks';
 
 export async function POST(
   request: NextRequest,
@@ -192,12 +193,14 @@ export async function POST(
       if (kbArticles.length > 0) {
         customerMessage += `Recommended articles:\n`;
         kbArticles.slice(0, 2).forEach((article, idx) => {
-          customerMessage += `${idx + 1}. ${article.title}\n`;
+          const url = citationUrl('kb-articles', article.id);
+          customerMessage += `${idx + 1}. ${article.title} - ${url}\n`;
         });
       }
       
       if (resolutions.length > 0) {
-        customerMessage += `\nRecommended resolution: ${resolutions[0].title}\n`;
+        const url = citationUrl('resolutions', resolutions[0].id);
+        customerMessage += `\nRecommended resolution: ${resolutions[0].title} - ${url}\n`;
       }
       
       customerMessage += `\nPlease try these steps and let us know if you need further assistance.`;
