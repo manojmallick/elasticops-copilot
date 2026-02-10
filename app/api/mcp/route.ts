@@ -49,7 +49,7 @@ const TOOLS = [
   {
     name: "create_or_update_ticket",
     description:
-      "Create or update a ticket in Elasticsearch. Requires >= 2 citations before writing.",
+      "Create or update a ticket in Elasticsearch. STRICT POLICY: Requires >= 2 citations from at least 2 different indices (e.g., kb-articles + tickets, or kb-articles + resolutions). This prevents hallucinations and ensures evidence-based actions. Format citations as 'index-name:document-id'.",
     inputSchema: {
       type: "object",
       properties: {
@@ -62,7 +62,11 @@ const TOOLS = [
             description: { type: "string" },
             status: { type: "string", enum: ["open", "resolved", "closed"] },
             priority: { type: "string", enum: ["normal", "p1", "p2", "p3"] },
-            citations: { type: "array", items: { type: "string" } },
+            citations: { 
+              type: "array", 
+              items: { type: "string" },
+              description: "Array of citations in format 'index:id'. Must include at least 2 citations from 2+ different indices."
+            },
           },
           required: ["subject", "description", "citations"],
         },
@@ -89,19 +93,45 @@ async function createOrUpdateTicket(args: unknown) {
   const parsed = CreateOrUpdateTicketInput.parse(args);
 
   const citations = parsed.fields.citations || [];
+  
+  // Rule 1: Require at least 2 citations
   if (citations.length < 2) {
-    // MCP tool results should be returned in `content`
     return {
       content: [
         {
           type: "text",
           text:
             "CITATION_RULE: Not enough citations to create/update ticket. " +
-            "Need >= 2 citations (preferably from 2 different indices).",
+            "Need >= 2 citations from at least 2 different indices (e.g., kb-articles + tickets/resolutions).",
         },
       ],
       isError: true,
-      meta: { confidence: "low", citations },
+      meta: { confidence: "low", citations, reason: "insufficient_citations" },
+    };
+  }
+
+  // Rule 2: Require citations from at least 2 different indices for create mode
+  const indices = new Set(citations.map(c => c.split(":")[0]));
+  
+  if (parsed.mode === "create" && indices.size < 2) {
+    return {
+      content: [
+        {
+          type: "text",
+          text:
+            "CROSS_INDEX_RULE: Need citations from at least 2 different indices. " +
+            `Found only: ${Array.from(indices).join(", ")}. ` +
+            "Prefer: kb-articles + tickets, or kb-articles + resolutions. " +
+            "This prevents over-reliance on a single source and ensures evidence-based actions.",
+        },
+      ],
+      isError: true,
+      meta: { 
+        confidence: "low", 
+        citations, 
+        indices: Array.from(indices),
+        reason: "single_index_only" 
+      },
     };
   }
 
@@ -130,14 +160,22 @@ async function createOrUpdateTicket(args: unknown) {
         {
           type: "text",
           text: JSON.stringify(
-            { ok: true, mode: "create", ticket_id: result._id, index: result._index, citations },
+            { 
+              ok: true, 
+              mode: "create", 
+              ticket_id: result._id, 
+              index: result._index, 
+              citations,
+              indices_used: Array.from(indices),
+              cross_index_validated: true
+            },
             null,
             2
           ),
         },
       ],
       isError: false,
-      meta: { confidence: "high" },
+      meta: { confidence: "high", indices_count: indices.size },
     };
   }
 
@@ -167,14 +205,21 @@ async function createOrUpdateTicket(args: unknown) {
       {
         type: "text",
         text: JSON.stringify(
-          { ok: true, mode: "update", ticket_id: parsed.ticket_id, index: "tickets", citations },
+          { 
+            ok: true, 
+            mode: "update", 
+            ticket_id: parsed.ticket_id, 
+            index: "tickets", 
+            citations,
+            indices_used: Array.from(indices)
+          },
           null,
           2
         ),
       },
     ],
     isError: false,
-    meta: { confidence: "high" },
+    meta: { confidence: "high", indices_count: indices.size },
   };
 }
 
