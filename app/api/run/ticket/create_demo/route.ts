@@ -1,174 +1,119 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { esClient } from '@/lib/elastic';
-import { generateEmbedding } from '@/lib/embed';
-import { buildHybridSearch, buildTicketDedupeSearch } from '@/lib/searchTemplates';
+import { NextResponse } from "next/server";
+import { esClient } from "@/lib/elastic";
 
-export async function POST(request: NextRequest) {
-  const startTime = Date.now();
-  const runId = `run_${Date.now()}`;
-  
-  try {
-    const body = await request.json();
-    const { subject, description } = body;
-    
-    if (!subject || !description) {
-      return NextResponse.json(
-        { error: 'Subject and description are required' },
-        { status: 400 }
-      );
-    }
-    
-    // Step 1: Generate embedding
-    const textForEmbedding = `${subject} ${description}`;
-    const embedding = generateEmbedding(textForEmbedding);
-    
-    // Step 2: Search KB articles (hybrid: BM25 + kNN)
-    const kbQuery = buildHybridSearch(textForEmbedding, embedding);
-    const kbResponse = await esClient.search({
-      index: 'kb-articles',
-      ...kbQuery,
-      size: 2,
-    });
-    
-    // Step 3: Search for duplicate tickets (kNN)
-    const ticketQuery = buildTicketDedupeSearch(embedding);
-    const ticketResponse = await esClient.search({
-      index: 'tickets',
-      ...ticketQuery,
-      size: 2,
-    });
-    
-    // Step 4: Collect citations
-    const citations: any[] = [];
-    
-    kbResponse.hits.hits.forEach((hit: any) => {
-      citations.push({
-        index: 'kb-articles',
-        id: hit._id,
-        highlight: hit._source?.title || '',
-      });
-    });
-    
-    ticketResponse.hits.hits.forEach((hit: any) => {
-      citations.push({
-        index: 'tickets',
-        id: hit._id,
-        highlight: hit._source?.subject || '',
-      });
-    });
-    
-    // Step 5: Check if we have enough citations
-    if (citations.length < 2) {
-      return NextResponse.json({
-        ok: false,
-        run_id: runId,
-        timeline_url: `/timeline/${runId}`,
-        summary: 'Insufficient evidence to create ticket',
-        recommended_action: 'Manual review required - less than 2 citations found',
-        citations,
-        confidence: 'low',
-        debug: { took_ms: Date.now() - startTime },
-      });
-    }
-    
-    // Step 6: Create the ticket via tool endpoint
-    const ticketId = `TKT-${Date.now()}`;
-    
-    const createResponse = await esClient.index({
-      index: 'tickets',
-      id: ticketId,  // Use ticket_id as the document ID
-      body: {
-        ticket_id: ticketId,
-        subject,
-        description,
-        category: 'general',
-        severity: 'medium',
-        priority: 'p3',
-        status: 'open',
-        channel: 'copilot-ui',
-        customer_id: 'DEMO',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        tags: ['copilot-created', 'evidence-gated'],
-        embedding,
+type Citation = { index: string; id: string; highlight?: string };
+
+async function topHit(index: string, query: string): Promise<Citation | null> {
+  const r = await esClient.search({
+    index,
+    size: 1,
+    query: { match: { content: query } },
+    highlight: { fields: { "*": {} } },
+  });
+  const hit = r.hits.hits?.[0];
+  if (!hit || !hit._id) return null;
+  const hl = hit.highlight ? Object.values(hit.highlight).flat().slice(0, 1)[0] : undefined;
+  return { index, id: hit._id, highlight: hl };
+}
+
+// tickets search should match subject/description
+async function topTicket(query: string): Promise<Citation | null> {
+  const r = await esClient.search({
+    index: "tickets",
+    size: 1,
+    query: {
+      multi_match: {
+        query,
+        fields: ["subject^2", "description"],
       },
-      refresh: true,
-    });
-    
-    // Step 7: Write metrics
-    await esClient.index({
-      index: 'ops-metrics',
-      body: {
-        metric_type: 'operations',
-        metric_name: 'ticket_created_via_copilot',
-        value: 1,
-        unit: 'count',
-        category: 'general',
-        ref_id: createResponse._id,
-        ref_type: 'ticket',
-        timestamp: new Date().toISOString(),
-        tags: ['copilot', 'evidence-gated'],
-      },
-    });
-    
-    // Step 8: Record ops-run timeline
-    await esClient.index({
-      index: 'ops-runs',
-      body: {
-        run_id: runId,
-        workflow: 'copilot_create_ticket',
-        ref_id: createResponse._id,
-        ref_type: 'ticket',
-        status: 'completed',
-        started_at: new Date(startTime).toISOString(),
-        completed_at: new Date().toISOString(),
-        duration_ms: Date.now() - startTime,
-        steps: {
-          embed: { completed: true },
-          search_kb: { hits: kbResponse.hits.hits.length },
-          search_tickets: { hits: ticketResponse.hits.hits.length },
-          collect_citations: { count: citations.length },
-          create_ticket: { id: createResponse._id, ticket_id: ticketId },
-        },
-      },
-    });
-    
-    // Return CopilotRunResponse format
-    return NextResponse.json({
-      ok: true,
-      run_id: runId,
-      timeline_url: `/timeline/${runId}`,
-      summary: `Created ticket ${ticketId} with ${citations.length} citations from Elasticsearch`,
-      recommended_action: 'Ticket created successfully with sufficient evidence',
-      entities: {
-        ticket_id: ticketId,
-      },
-      outputs: {
-        category: 'general',
-        severity: 'medium',
-        priority: 'p3',
-      },
-      citations,
-      confidence: citations.length >= 2 ? 'high' : 'low',
-      metrics: {
-        citations_count: citations.length,
-        kb_results: kbResponse.hits.hits.length,
-        ticket_results: ticketResponse.hits.hits.length,
-      },
-      debug: {
-        took_ms: Date.now() - startTime,
-      },
-    });
-    
-  } catch (error: any) {
-    console.error('Error in create_demo workflow:', error);
-    return NextResponse.json(
-      { 
-        ok: false,
-        error: 'Failed to create ticket',
-        details: error.message,
-      },
-      { status: 500 }
-    );
+    },
+    highlight: { fields: { subject: {}, description: {} } },
+  });
+  const hit = r.hits.hits?.[0];
+  if (!hit || !hit._id) return null;
+  const hl = hit.highlight ? Object.values(hit.highlight).flat().slice(0, 1)[0] : undefined;
+  return { index: "tickets", id: hit._id, highlight: hl };
+}
+
+export async function POST(req: Request) {
+  const body = await req.json();
+  const subject = String(body.subject || "").trim();
+  const description = String(body.description || "").trim();
+
+  if (!subject || !description) {
+    return NextResponse.json({ ok: false, error: "subject and description required" }, { status: 400 });
   }
+
+  // 1) Evidence FIRST (keep it light to reduce tokens)
+  const q = `${subject} ${description}`.slice(0, 200);
+
+  const kb = await esClient.search({
+    index: "kb-articles",
+    size: 1,
+    query: { multi_match: { query: q, fields: ["title^2", "content"] } },
+    highlight: { fields: { title: {}, content: {} } },
+  });
+
+  const kbHit = kb.hits.hits?.[0];
+  const kbCitation = kbHit && kbHit._id
+    ? {
+        index: "kb-articles",
+        id: kbHit._id,
+        highlight: kbHit.highlight ? Object.values(kbHit.highlight).flat().slice(0, 1)[0] : undefined,
+      }
+    : null;
+
+  const ticketCitation = await topTicket(q);
+
+  const citations: Citation[] = [];
+  if (kbCitation) citations.push(kbCitation);
+  if (ticketCitation) citations.push(ticketCitation);
+
+  // 2) Enforce your rule: >=2 citations before write
+  if (citations.length < 2) {
+    return NextResponse.json({
+      ok: false,
+      summary: "Not enough evidence to create ticket.",
+      recommended_action: "Provide more details or broaden search terms.",
+      citations,
+      confidence: "low",
+    });
+  }
+
+  // 3) REAL WRITE into Elasticsearch
+  const ticketId = `TKT-${Date.now()}`;
+  const doc = {
+    ticket_id: ticketId,
+    subject,
+    description,
+    status: "open",
+    priority: "normal",
+    category: "general",
+    severity: "medium",
+    channel: "copilot-ui",
+    customer_id: "DEMO",
+    citations: citations.map((c) => `${c.index}:${c.id}`),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    tags: ["copilot-created", "evidence-gated"],
+  };
+
+  const result = await esClient.index({
+    index: "tickets",
+    id: ticketId,
+    body: doc,
+    refresh: "wait_for", // makes it immediately visible in Kibana + UI
+  });
+
+  const runId = `run-${Date.now()}`;
+  return NextResponse.json({
+    ok: true,
+    run_id: runId,
+    timeline_url: `/timeline/${runId}`,
+    summary: `Created ticket ${ticketId} in Elasticsearch with evidence gating.`,
+    recommended_action: `Open the ticket and run triage.`,
+    entities: { ticket_id: ticketId },
+    citations,
+    confidence: "high",
+  });
 }
