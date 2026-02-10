@@ -7,6 +7,7 @@ echo ""
 
 APP_URL=${APP_URL:-http://localhost:3000}
 ELASTIC_API_KEY=${ELASTIC_API_KEY:-}
+DEMO_SECRET=${DEMO_SECRET:-demo-secret-2026}
 
 # Setup curl auth if needed
 CURL_CMD="curl -s"
@@ -14,6 +15,22 @@ if [ -n "$ELASTIC_API_KEY" ]; then
   # For API requests, no auth needed (Next.js handles it)
   CURL_CMD="curl -s"
 fi
+
+# Step 0: Simulate error spike (optional)
+echo "Step 0: Simulating error spike (optional)..."
+SPIKE_RESPONSE=$($CURL_CMD -X POST "$APP_URL/api/demo/spike" \
+  -H "Content-Type: application/json" \
+  -H "x-demo-secret: $DEMO_SECRET")
+SPIKE_OK=$(echo "$SPIKE_RESPONSE" | jq -r '.ok // false')
+
+if [ "$SPIKE_OK" = "true" ]; then
+  SPIKE_COUNT=$(echo "$SPIKE_RESPONSE" | jq -r '.inserted // 0')
+  echo "✅ Simulated $SPIKE_COUNT error logs"
+else
+  echo "ℹ️  Skipping spike simulation (use DEMO_SECRET env var if needed)"
+fi
+
+echo ""
 
 # Step 1: Detect spike and create incident
 echo "Step 1: Running spike detection..."

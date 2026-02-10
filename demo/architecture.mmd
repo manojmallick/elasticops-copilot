@@ -10,6 +10,7 @@ graph TB
         E[ES|QL Spike<br/>Detector]
         F[Incident<br/>Creation]
         G[Embedding<br/>Generator]
+        DemoSpike[Demo Spike<br/>Generator]
     end
     
     subgraph "Multi-Agent Workflows"
@@ -18,9 +19,10 @@ graph TB
     end
     
     subgraph "Search & Retrieval"
-        J[Hybrid Search<br/>BM25 + kNN]
+        J[RRF Hybrid Search<br/>BM25 + kNN + Rank Fusion]
         K[Deduplication<br/>kNN]
         L[Resolution<br/>Retrieval]
+        Explain[Search Explainability<br/>Component Scores & Ranks]
     end
     
     subgraph "Observability"
@@ -29,6 +31,7 @@ graph TB
         O[Dashboard<br/>UI]
     end
     
+    DemoSpike -->|Bulk Insert Errors| A
     A -->|ES|QL Query| E
     E -->|Error Spike| F
     F -->|Create| D
@@ -42,12 +45,14 @@ graph TB
     G --> K
     G --> L
     
+    J --> Explain
+    
     D --> H
     J --> H
     K --> H
     L --> H
     
-    H -->|Update| D
+    H -->|Update + Confidence| D
     H -->|Record| M
     H -->|Write| N
     
@@ -64,11 +69,13 @@ graph TB
     style E fill:#fff3e0
     style F fill:#fff3e0
     style G fill:#fff3e0
+    style DemoSpike fill:#fff3e0
     style H fill:#e8f5e9
     style I fill:#e8f5e9
     style J fill:#f3e5f5
     style K fill:#f3e5f5
     style L fill:#f3e5f5
+    style Explain fill:#f3e5f5
     style M fill:#fce4ec
     style N fill:#fce4ec
     style O fill:#fce4ec
