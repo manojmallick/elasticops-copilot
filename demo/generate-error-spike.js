@@ -33,19 +33,41 @@ if (fs.existsSync(envPath)) {
       }
     }
   });
+} else {
+  console.error('⚠️  No .env file found at:', envPath);
+  console.error('   Create one from .env.example:');
+  console.error('   cp .env.example .env\n');
+  console.error('   Then edit .env and add your credentials.\n');
 }
 
 const { Client } = require('@elastic/elasticsearch');
 
-// Initialize Elasticsearch client
-const client = new Client({
-  cloud: {
-    id: process.env.ELASTIC_CLOUD_ID,
-  },
-  auth: {
-    apiKey: process.env.ELASTIC_API_KEY,
-  },
-});
+// Initialize Elasticsearch client (delayed to allow env loading)
+let client;
+
+function getClient() {
+  if (!client) {
+    if (!process.env.ELASTIC_CLOUD_ID || !process.env.ELASTIC_API_KEY) {
+      console.error('❌ Missing Elasticsearch configuration');
+      console.error('   ELASTIC_CLOUD_ID:', process.env.ELASTIC_CLOUD_ID ? '✅ Set' : '❌ Not set');
+      console.error('   ELASTIC_API_KEY:', process.env.ELASTIC_API_KEY ? '✅ Set' : '❌ Not set');
+      console.error('\n   Make sure your .env file contains:');
+      console.error('   ELASTIC_CLOUD_ID=your_cloud_id_here');
+      console.error('   ELASTIC_API_KEY=your_api_key_here\n');
+      process.exit(1);
+    }
+    
+    client = new Client({
+      cloud: {
+        id: process.env.ELASTIC_CLOUD_ID,
+      },
+      auth: {
+        apiKey: process.env.ELASTIC_API_KEY,
+      },
+    });
+  }
+  return client;
+}
 
 async function generateErrorSpike() {
   console.log('🔥 Generating error spike...\n');
@@ -101,7 +123,7 @@ async function generateErrorSpike() {
     console.log(`   Environment: ${env}`);
     console.log(`   Time range: last ${timeSpreadMinutes} minutes\n`);
     
-    const bulkResponse = await client.bulk({
+    const bulkResponse = await getClient().bulk({
       refresh: true,
       operations,
     });
@@ -129,7 +151,7 @@ async function generateErrorSpike() {
       | SORT errors DESC
     `;
     
-    const queryResponse = await client.transport.request({
+    const queryResponse = await getClient().transport.request({
       method: 'POST',
       path: '/_query',
       body: { query: esqlQuery },
@@ -166,21 +188,11 @@ async function generateErrorSpike() {
 async function checkPrerequisites() {
   console.log('🔍 Checking prerequisites...\n');
   
-  if (!process.env.ELASTIC_CLOUD_ID) {
-    console.error('❌ ELASTIC_CLOUD_ID not found in environment');
-    console.error('   Set it in .env file\n');
-    process.exit(1);
-  }
-  
-  if (!process.env.ELASTIC_API_KEY) {
-    console.error('❌ ELASTIC_API_KEY not found in environment');
-    console.error('   Set it in .env file\n');
-    process.exit(1);
-  }
+  // getClient() will check env vars and exit if missing
   
   try {
     // Check if logs-app index exists
-    const exists = await client.indices.exists({ index: 'logs-app' });
+    const exists = await getClient().indices.exists({ index: 'logs-app' });
     
     if (!exists) {
       console.error('❌ Index "logs-app" does not exist');
