@@ -51,7 +51,77 @@ export async function POST(request: NextRequest) {
     // Process the first spike (columns: errors, service, env)
     const [errorCount, service, env] = spikes[0];
     
-    // Step 2: Create incident
+    // Step 2: Check for existing incident (deduplication)
+    steps.check_existing = {
+      started_at: new Date().toISOString(),
+    };
+    
+    const existingIncidentResponse = await esClient.search({
+      index: 'incidents',
+      query: {
+        bool: {
+          must: [
+            { term: { service } },
+            { term: { env } },
+            { terms: { status: ['open', 'investigating'] } },
+            {
+              range: {
+                detected_at: {
+                  gte: 'now-10m', // Check last 10 minutes
+                },
+              },
+            },
+          ],
+        },
+      },
+      sort: [{ detected_at: { order: 'desc' } }],
+      size: 1,
+    });
+    
+    const existingIncident = existingIncidentResponse.hits.hits[0];
+    
+    steps.check_existing.completed_at = new Date().toISOString();
+    steps.check_existing.found_existing = !!existingIncident;
+    
+    if (existingIncident) {
+      // Incident already exists, don't create duplicate
+      const existingDoc = existingIncident._source as any;
+      
+      await recordOpsRun({
+        run_id: runId,
+        workflow: 'incident_detection',
+        ref_id: existingIncident._id,
+        ref_type: 'incident',
+        status: 'completed',
+        started_at: startedAt.toISOString(),
+        completed_at: new Date().toISOString(),
+        duration_ms: Date.now() - startedAt.getTime(),
+        steps,
+      });
+      
+      return NextResponse.json({
+        ok: false,
+        run_id: runId,
+        timeline_url: `/timeline/${runId}`,
+        summary: `Incident already exists for ${service} (${env})`,
+        recommended_action: `View existing incident: ${existingDoc.incident_id}`,
+        citations: [],
+        confidence: 'high' as const,
+        entities: {
+          incident_id: existingIncident._id,
+        },
+        metrics: { 
+          spikes_found: spikes.length,
+          duplicate_prevented: true,
+        },
+        debug: { 
+          took_ms: Date.now() - startedAt.getTime(),
+          existing_incident_id: existingDoc.incident_id,
+        },
+      });
+    }
+    
+    // Step 3: Create new incident
     steps.create_incident = {
       started_at: new Date().toISOString(),
       service,

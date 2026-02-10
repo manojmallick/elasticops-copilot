@@ -47,6 +47,10 @@ export default function InboxPage() {
         setMessage(`✅ Spike detected! Created incident ${data.entities.incident_id}${data.entities.ticket_id ? ' and ticket ' + data.entities.ticket_id : ''}`);
         // Reload data to show new incident/ticket
         setTimeout(loadData, 1000);
+      } else if (data.metrics?.duplicate_prevented) {
+        setMessage(`ℹ️ ${data.summary} (${data.debug?.existing_incident_id || 'already open'})`);
+        // Still reload to show existing incident
+        setTimeout(loadData, 500);
       } else {
         setMessage('ℹ️ ' + (data.summary || data.message || 'No spikes detected'));
       }
