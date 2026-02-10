@@ -41,8 +41,8 @@ export default function TicketDetailPage() {
 
       const data = await response.json();
 
-      if (data.success) {
-        setMessage(`✅ Triage completed! Confidence: ${data.confidence}, Updated: ${data.updated}`);
+      if (data.ok) {
+        setMessage(`✅ ${data.summary} • Confidence: ${data.confidence} • Citations: ${data.citations?.length || 0}`);
         // Reload ticket to see updates
         setTimeout(loadTicket, 1000);
       } else {
