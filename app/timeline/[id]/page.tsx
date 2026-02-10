@@ -20,10 +20,20 @@ export default function TimelinePage() {
     setLoading(true);
     try {
       const response = await fetch(`/api/timeline/${id}`);
+      if (!response.ok) {
+        setTimeline(null);
+        return;
+      }
       const data = await response.json();
-      setTimeline(data);
+      // Check if data has error field
+      if (data.error) {
+        setTimeline(null);
+      } else {
+        setTimeline(data);
+      }
     } catch (error) {
       console.error('Error loading timeline:', error);
+      setTimeline(null);
     } finally {
       setLoading(false);
     }
@@ -39,7 +49,12 @@ export default function TimelinePage() {
         <div className="page-header">
           <h1 className="page-title">Timeline</h1>
         </div>
-        <div className="error">No timeline found for this ID. Run a workflow first.</div>
+        <div className="card">
+          <p style={{ color: '#666', marginBottom: '1rem' }}>No timeline found for this ID. Run a workflow first.</p>
+          <a href="/" className="btn">
+            ← Back to Home
+          </a>
+        </div>
       </div>
     );
   }
@@ -111,11 +126,19 @@ export default function TimelinePage() {
         </div>
       </div>
 
-      <div style={{ marginTop: '2rem' }}>
-        <a href={`/${timeline.ref_type}/${timeline.ref_id}`} className="btn btn-secondary">
-          ← Back to {timeline.ref_type}
-        </a>
-      </div>
+      {timeline.ref_type && timeline.ref_id ? (
+        <div style={{ marginTop: '2rem' }}>
+          <a href={`/${timeline.ref_type}/${timeline.ref_id}`} className="btn btn-secondary">
+            ← Back to {timeline.ref_type}
+          </a>
+        </div>
+      ) : (
+        <div style={{ marginTop: '2rem' }}>
+          <a href="/" className="btn btn-secondary">
+            ← Back to Home
+          </a>
+        </div>
+      )}
     </div>
   );
 }

@@ -54,9 +54,9 @@ export default function ResolutionPage() {
         </div>
         <div className="card">
           <p>The requested resolution could not be found.</p>
-          <button className="btn" onClick={() => router.back()} style={{ marginTop: '1rem' }}>
-            ← Back
-          </button>
+          <a href="/" className="btn" style={{ marginTop: '1rem', display: 'inline-block' }}>
+            ← Back to Home
+          </a>
         </div>
       </div>
     );
@@ -70,9 +70,11 @@ export default function ResolutionPage() {
       </div>
 
       <div className="card">
-        <button className="btn" onClick={() => router.back()} style={{ marginBottom: '1.5rem' }}>
-          ← Back
-        </button>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <button className="btn" onClick={() => window.history.length > 1 ? router.back() : router.push('/')} style={{ marginRight: '0.5rem' }}>
+            ← Back
+          </button>
+        </div>
 
         <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1rem' }}>
           {resolution.title || resolution.name || 'Untitled'}
