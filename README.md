@@ -1,353 +1,416 @@
-# ElasticOps Copilot
+# 🚀 ElasticOps Copilot
 
-**Multi-Agent Support Automation + Incident Awareness**
+**Evidence-Gated AI Support Automation — Powered Entirely by Elasticsearch**
 
-Intelligent support automation powered by Elasticsearch. Features automatic incident detection using ES|QL, AI-driven ticket triage with hybrid search, semantic deduplication, optional LLM integration (Google Gemini), and complete workflow observability with Agent Builder integration.
+> AI-driven ticket triage that **refuses to hallucinate**. Every automated response requires ≥2 grounded citations from Elasticsearch before reaching a customer. No citations? **Routed to a human.**
 
-## 🌟 New Features
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://elasticops-copilot.vercel.app/) [![Elasticsearch](https://img.shields.io/badge/Elasticsearch-9.3.0-005571?logo=elasticsearch)](https://elastic.co) [![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-✅ **Dual Mode**: Works with Elastic Cloud OR local Docker  
-✅ **Vercel Deployment**: Production-ready deployment with Agent Builder webhooks  
-✅ **Agent Builder Integration**: Complete documentation and workflow examples  
-✅ **Citation Gating**: Requires 2+ sources before auto-updating tickets  
-✅ **Confidence Scoring**: Three-path decision logic (auto/duplicate/review)  
+**Elasticsearch Features Used:** ES|QL · BM25 Full-Text · kNN Vector Search · Reciprocal Rank Fusion · Vector Deduplication · Confidence Scoring · Audit Timeline
 
-See [`CHANGELOG.md`](./CHANGELOG.md) for complete enhancement details.
+<p align="center">
+  <img src="./demo/screenshots/home-page.png" alt="ElasticOps Copilot — Home" width="700" />
+</p>
 
-## 🚀 Deployment Options
+---
 
-### Option 1: Live Cloud Demo
-Production deployment on Vercel + Elastic Cloud with Agent Builder webhook integration:
+## 📋 Table of Contents
 
-- 🌐 **Live URL**: Accessible from anywhere
-- 🤖 **Agent Builder**: Webhook connector allows agents to create tickets from Kibana
-- 🔒 **Secure**: Webhook secret verification
-- ⚡ **Fast**: Serverless functions, global CDN
+1. [Problem Statement](#-problem-statement)
+2. [Solution Overview](#-solution-overview)
+3. [Architecture](#-architecture)
+4. [Elasticsearch Features Used](#-elasticsearch-features-deep-dive)
+5. [Workflow Pipeline](#-workflow-pipeline)
+6. [Safety & Explainability](#-safety--explainability)
+7. [Local Setup](#-local-setup)
+8. [Demo Walkthrough](#-demo-walkthrough)
+9. [License](#-license)
 
-**Quick Deploy**: Follow [`VERCEL_DEPLOYMENT.md`](./VERCEL_DEPLOYMENT.md) (~30 min setup)  
-**Quick Setup**: Follow [`agent_builder/AGENT_BUILDER_SETUP.md`](./agent_builder/AGENT_BUILDER_SETUP.md) (~10 min config)
+---
 
-### Option 2: Local Development
-Use Docker Compose for local development:
+## ❌ Problem Statement
 
-```bash
-./demo/bootstrap.sh
+AI-powered support automation sounds great — until it fails catastrophically:
+
+| Failure Mode | What Happens | Real-World Impact |
+|---|---|---|
+| **Hallucination** | LLM fabricates solutions that don't exist | Customers follow wrong steps, escalate |
+| **No Grounding** | Responses lack evidence from actual docs | Support team can't verify AI answers |
+| **No Auditability** | Decisions are black-box | Compliance fails, debugging impossible |
+| **Duplicate Noise** | Same issue creates multiple tickets | Teams waste hours on redundant work |
+
+Traditional AI support tools generate confident-sounding answers with zero accountability. **ElasticOps Copilot takes the opposite approach.**
+
+---
+
+## ✅ Solution Overview
+
+ElasticOps Copilot is an **evidence-gated AI support agent** where every decision is grounded in Elasticsearch data:
+
+- 🔍 **Real-time incident detection** using ES|QL aggregations over application logs
+- 🧠 **Hybrid retrieval** combining BM25 full-text search with kNN vector similarity via Reciprocal Rank Fusion (RRF)
+- 🔗 **Semantic deduplication** using vector similarity to prevent duplicate tickets
+- 🛡️ **Citation gating** — auto-responses require ≥2 verified sources, otherwise routed to humans
+- 📊 **Confidence scoring** with transparent three-component breakdown (KB, resolutions, similar tickets)
+- 📝 **Full audit trail** — every agent step is logged to Elasticsearch with timestamps and evidence
+
+**Every feature runs on Elasticsearch. No external AI APIs required for core functionality.**
+
+---
+
+## 🏗 Architecture
+
+```mermaid
+graph TB
+    subgraph Interface["🖥️ Interface Layer"]
+        UI["Copilot UI<br/>Dashboard & Home"]
+        INBOX["Inbox<br/>Incidents & Tickets"]
+        SEARCH["Search Explorer<br/>Hybrid Search + Explain"]
+    end
+
+    subgraph Agent["🤖 Agent Workflow Layer"]
+        direction LR
+        EMBED["1. Embed<br/>SHA-256 → 384d Vector"]
+        CLASSIFY["2. Classify<br/>Rule-Based Triage"]
+        DEDUPE["3. Dedupe<br/>kNN Similarity >.95"]
+        RETRIEVE_KB["4. Retrieve KB<br/>BM25 + kNN Hybrid"]
+        RETRIEVE_RES["5. Retrieve Resolutions<br/>kNN Filtered Search"]
+        DRAFT["6. Draft<br/>Citation-Gated Response"]
+        ACT["7. Act<br/>Update / Flag / Merge"]
+    end
+
+    subgraph Elastic["⚡ Elasticsearch Layer"]
+        LOGS["logs-app<br/>ES|QL Spike Detection"]
+        TICKETS["tickets<br/>BM25 + kNN"]
+        KB["kb-articles<br/>Hybrid Search"]
+        RES["resolutions<br/>kNN Retrieval"]
+        RRF["RRF Fusion<br/>Reciprocal Rank Fusion"]
+        CONF["Confidence Engine<br/>3-Component Scoring"]
+        AUDIT["ops-runs / ops-metrics<br/>Audit Timeline & KPIs"]
+    end
+
+    UI --> Agent
+    INBOX --> Agent
+    SEARCH --> RRF
+
+    EMBED --> CLASSIFY --> DEDUPE --> RETRIEVE_KB --> RETRIEVE_RES --> DRAFT --> ACT
+
+    LOGS -.->|"ES|QL: error spike ≥40/5min"| INBOX
+    DEDUPE -->|"kNN cosine similarity"| TICKETS
+    RETRIEVE_KB -->|"BM25 + kNN"| KB
+    RETRIEVE_RES -->|"kNN filtered"| RES
+    RRF -->|"1/(k+rank) fusion"| SEARCH
+    DRAFT -->|"≥2 citations required"| CONF
+    ACT -->|"step-by-step trace"| AUDIT
+
+    style Interface fill:#1a1a2e,stroke:#16213e,color:#e2e8f0
+    style Agent fill:#0f3460,stroke:#16213e,color:#e2e8f0
+    style Elastic fill:#533483,stroke:#16213e,color:#e2e8f0
+    style LOGS fill:#e94560,stroke:#e94560,color:#fff
+    style RRF fill:#e94560,stroke:#e94560,color:#fff
+    style CONF fill:#e94560,stroke:#e94560,color:#fff
+    style AUDIT fill:#e94560,stroke:#e94560,color:#fff
 ```
 
-Opens: http://localhost:3000
+---
 
-See [`CLOUD_SETUP.md`](./CLOUD_SETUP.md) for cloud-only setup without deployment.
+## 🔍 Elasticsearch Features Deep Dive
 
-## ⚡ Quick Start
+### 1. ES|QL — Real-Time Spike Detection
 
-### Option 1: Local Docker (Original)
-```bash
-./demo/bootstrap.sh
-```
+Detects error spikes in application logs using Elasticsearch's native query language:
 
-### Option 2: Elastic Cloud
-```bash
-# 1. Copy and edit environment file
-cp .env.example .env.local
-# Edit .env.local with your Cloud ID and API key
-
-# 2. Run setup
-./demo/bootstrap.sh
-```
-
-See [`CLOUD_SETUP.md`](./CLOUD_SETUP.md) for detailed cloud setup instructions.
-
-## 🤖 Agent Builder Integration
-
-This project includes comprehensive **Agent Builder** configuration in the [`agent_builder/`](./agent_builder/) folder:
-
-- **[ES|QL Tool](./agent_builder/tools/detect_error_spikes.esql)** - Error spike detection query
-- **[kNN Search Tools](./agent_builder/tools/)** - KB articles, tickets, resolutions
-- **[Multi-Step Workflow](./agent_builder/workflows/ticket_upsert_workflow.md)** - 7-step triage process
-- **[Agent Instructions](./agent_builder/agent_instructions.md)** - System prompt with JSON schema
-- **[Connectors](./agent_builder/connectors.md)** - Gemini LLM + webhook configs
-- **[Demo Script](./agent_builder/demo_steps.md)** - 5-minute walkthrough
-
-## 🎯 One-Click Demo
-
-```bash
-./demo/run-demo.sh
-```
-
-Automatically runs:
-1. Spike detection → creates incident + ticket
-2. Selects an open ticket → runs triage workflow
-3. Prints all demo URLs
-
-Then visit the URLs to see the results!
-
-## 🏗️ Architecture
-
-```
-┌─────────────┐    ES|QL      ┌──────────────┐
-│  logs-app   │──────────────→│   Incident   │
-│  (errors)   │               │   Detection  │
-└─────────────┘               └──────────────┘
-                                     │
-                                     ↓
-┌─────────────┐              ┌──────────────┐
-│ kb-articles │────┐         │    Ticket    │
-│ resolutions │────┼────────→│    Triage    │
-│  tickets    │────┘  Hybrid │    Agent     │
-└─────────────┘      Search  └──────────────┘
-                                     │
-                                     ↓
-                              ┌──────────────┐
-                              │  ops-runs    │
-                              │  ops-metrics │
-                              └──────────────┘
-```
-
-See [demo/architecture.mmd](demo/architecture.mmd) for full diagram.
-
-**Generate PNG:**
-```bash
-npm install -g @mermaid-js/mermaid-cli
-mmdc -i demo/architecture.mmd -o demo/architecture.png
-```
-
-## 🔍 Where Elasticsearch is Used
-
-### 1. **ES|QL for Spike Detection**
-Detects error spikes in real-time:
 ```sql
 FROM logs-app
 | WHERE @timestamp >= NOW() - 5 minutes
 | WHERE level == "ERROR"
 | STATS errors = COUNT(*) BY service, env
 | WHERE errors >= 40
+| SORT errors DESC
 ```
 
-### 2. **Vector Search (kNN)**
-- **Semantic deduplication**: Find similar tickets before creating duplicates
-- **Resolution retrieval**: Match incidents to historical fixes
-- **KB recommendations**: Surface relevant articles
+📁 [`lib/esql.ts`](./lib/esql.ts) — When a spike is detected, an incident is auto-created and linked to a new ticket.
 
-Uses deterministic 384-dim embeddings (SHA-256 based) for reproducibility.
+### 2. BM25 Full-Text Search
 
-### 3. **Hybrid Search (BM25 + kNN)**
-Combines text matching and semantic similarity:
-- BM25 for keyword relevance
-- kNN for semantic understanding
-- Weighted scoring for best results
+Term-frequency scoring across KB articles and tickets:
 
-### 4. **Metrics Aggregation**
-Real-time KPI calculation:
-- Time saved (auto-triage vs manual)
-- Duplicates prevented
-- Mean Time to Acknowledge (MTTA)
-- Category breakdowns
-
-### 5. **Audit & Timeline**
-Complete workflow observability in `ops-runs`:
-- Step-by-step execution traces
-- Citations and evidence
-- Performance metrics
-- Error tracking
-
-## 📊 Demo Flow (3 Minutes)
-
-### 🔥 Generate Test Spike (Optional - 30s)
-To trigger incident detection, generate error logs:
-```bash
-node demo/generate-error-spike.js
-```
-This inserts 50 ERROR logs into `logs-app` (threshold is 40 errors/5min).
-
-**See full testing guide**: [`demo/TESTING_SPIKE_DETECTION.md`](./demo/TESTING_SPIKE_DETECTION.md)
-
-### 1. Incident Detection (45s)
-- Go to `/inbox`
-- Click "Detect Error Spike"
-- See auto-created incident + ticket
-- View timeline showing detection steps
-
-### 2. Ticket Triage (60s)
-- Open any ticket
-- Click "Run Triage"
-- Watch auto-classification
-- See KB + resolution recommendations
-- Review citations and confidence score
-- View complete timeline
-
-### 3. Search Explorer (30s)
-- Go to `/search`
-- Search: "authentication error"
-- Toggle KB vs Tickets mode
-- Expand "Why ranked here?" to see scoring
-
-### 4. Dashboard (15s)
-- View KPIs (duplicates, time saved, MTTA)
-- Category breakdown
-
-## 📁 Repository Structure
-
-```
-elasticops-copilot/
-├── app/                          # Next.js App Router
-│   ├── layout.tsx               # Root layout + nav
-│   ├── globals.css              # Styles
-│   ├── inbox/page.tsx           # Incidents + tickets
-│   ├── ticket/[id]/page.tsx     # Ticket detail
-│   ├── incident/[id]/page.tsx   # Incident detail
-│   ├── timeline/[id]/page.tsx   # Workflow timeline
-│   ├── search/page.tsx          # Search explorer
-│   ├── dashboard/page.tsx       # Metrics dashboard
-│   └── api/                     # API routes
-│       ├── tickets/route.ts
-│       ├── incidents/route.ts
-│       ├── search/route.ts
-│       ├── metrics/route.ts
-│       ├── timeline/[id]/route.ts
-│       ├── run/
-│       │   ├── ticket/[id]/route.ts      # Triage workflow
-│       │   └── incident/detect/route.ts   # Spike detection
-│       └── tools/
-│           └── create_or_update_ticket/route.ts
-├── lib/                         # Core utilities
-│   ├── elastic.ts              # ES client
-│   ├── embed.ts                # Deterministic embeddings
-│   ├── esql.ts                 # ES|QL queries
-│   └── searchTemplates.ts      # Hybrid search builders
-├── infra/                       # Infrastructure
-│   ├── docker-compose.yml
-│   ├── create-indices.sh
-│   └── mappings/               # Index mappings (JSON)
-│       ├── kb-articles.json
-│       ├── tickets.json
-│       ├── resolutions.json
-│       ├── logs-app.json
-│       ├── incidents.json
-│       ├── ops-metrics.json
-│       └── ops-runs.json
-├── data/generator/              # Synthetic data
-│   └── generate_synthetic.js   # Creates 200 KB, 300 res, 2K tickets, 10K logs
-└── demo/                        # Demo materials
-    ├── bootstrap.sh            # One-command setup
-    ├── run-demo.sh             # Automated demo execution
-    ├── demo-script.md          # 3-minute walkthrough
-    ├── architecture.mmd        # Mermaid diagram
-    └── screenshots/            # (empty, add as needed)
+```typescript
+multi_match: {
+  query: queryText,
+  fields: ['title^2', 'content'],
+  fuzziness: 'AUTO',
+}
 ```
 
-## 🛠️ Tech Stack
+📁 [`lib/searchTemplates.ts`](./lib/searchTemplates.ts) — Boosts title matches 2× for relevance.
 
-- **Next.js 14** (App Router)
-- **Elasticsearch 8.11** (no security for easy demo)
-- **Node.js 18+**
-- **@elastic/elasticsearch** client
-- **Deterministic embeddings** (no external APIs)
+### 3. kNN Vector Similarity
 
-## 🧪 Data
+384-dimensional vectors for semantic search, deduplication, and resolution retrieval:
 
-All data is synthetic and generated deterministically:
-- **200 KB articles** across 6 categories
-- **300 resolution playbooks** with success rates
-- **2000 tickets** (100 open for demos)
-- **10k logs** with 3 intentional error spikes
-
-No personal or confidential data used.
-
-## 🐛 Troubleshooting
-
-### Elasticsearch not ready
-```bash
-# Check status
-curl http://localhost:9200/_cluster/health
-
-# Wait longer or restart
-cd infra && docker-compose restart elasticsearch
+```typescript
+knn: {
+  field: 'embedding',
+  query_vector: queryVector,
+  k: 10,
+  num_candidates: 100,
+}
 ```
 
-### Ports in use
-```bash
-# Stop conflicting services
-lsof -ti:9200 | xargs kill -9  # ES
-lsof -ti:3000 | xargs kill -9  # Next.js
+📁 [`lib/embed.ts`](./lib/embed.ts) — Deterministic SHA-256 embeddings, no external API needed.
+
+### 4. Reciprocal Rank Fusion (RRF)
+
+Combines BM25 and kNN results using rank-based fusion:
+
+```typescript
+// RRF formula: score = Σ 1/(k + rank)
+rrfScore += 1 / (rrfK + bm25.rank);
+rrfScore += 1 / (rrfK + knn.rank);
 ```
 
-### Docker issues
-```bash
-# Clean restart
-cd infra
-docker-compose down -v
-docker-compose up -d
+📁 [`app/api/search/route.ts`](./app/api/search/route.ts) — Each result shows component BM25 score, kNN score, and final RRF rank.
+
+### 5. Vector-Based Deduplication
+
+Prevents duplicate tickets using kNN cosine similarity with a 0.95 threshold:
+
+```typescript
+const isDuplicate = similarTickets.some(t => t.score > 0.95);
 ```
 
-### Missing indices
-```bash
-./infra/create-indices.sh
-node data/generator/generate_synthetic.js
+📁 [`app/api/run/ticket/[id]/route.ts`](./app/api/run/ticket/%5Bid%5D/route.ts) — Duplicates are tagged and surfaced for merging.
+
+### 6. Confidence Scoring Model
+
+Three-component weighted scoring:
+
+| Component | Weight | Source |
+|---|---|---|
+| KB Article Relevance | 40% | Top-3 avg kNN+BM25 scores |
+| Resolution Match | 30% | Top-3 avg kNN scores |
+| Similar Ticket Signal | 30% | Top-3 avg kNN scores |
+
+Decision paths: **≥0.7 → Auto-triage** | **0.4–0.7 → Needs Review** | **<0.4 → Human Only**
+
+### 7. Audit Timeline Tracking
+
+Every workflow execution writes a complete trace to `ops-runs`:
+
+```json
+{
+  "run_id": "run_1708...",
+  "workflow": "ticket_triage",
+  "steps": {
+    "embed": { "started_at": "...", "dims": 384 },
+    "classify": { "category": "authentication", "severity": "high" },
+    "dedupe": { "isDuplicate": false, "similarTickets": [...] },
+    "retrieve_kb": { "articles_found": 5 },
+    "draft": { "confidence": "high", "citations": [...] },
+    "act": { "action": "updated" }
+  },
+  "duration_ms": 342
+}
 ```
 
-## 📦 Manual Setup
+KPIs tracked in `ops-metrics`: duplicates prevented, time saved, tickets auto-triaged, MTTA.
 
-If you prefer step-by-step:
+---
+
+## 🔄 Workflow Pipeline
+
+The triage agent executes a deterministic 7-step pipeline for every ticket:
+
+```
+Embed → Classify → Dedupe → Retrieve KB → Retrieve Resolutions → Draft → Act
+```
+
+| Step | What It Does | Elasticsearch Feature |
+|---|---|---|
+| **1. Embed** | Generate 384-dim vector from ticket text | SHA-256 deterministic embedding |
+| **2. Classify** | Assign category, severity, priority | Rule-based on ticket content |
+| **3. Dedupe** | Find similar open tickets (score >0.95 = duplicate) | kNN vector search with filters |
+| **4. Retrieve KB** | Find relevant knowledge base articles | BM25 + kNN hybrid search |
+| **5. Retrieve Resolutions** | Find matching resolution playbooks | kNN filtered by category + severity |
+| **6. Draft** | Generate response with citations | Citation gating (≥2 sources) |
+| **7. Act** | Update ticket, write audit log, record metrics | ES index + ops-runs timeline |
+
+Each step records timestamps, inputs, and outputs to the audit trail — making the entire process **reproducible and debuggable**.
+
+---
+
+## 🛡️ Safety & Explainability
+
+ElasticOps Copilot is built for **trust, not just speed**. Three safety mechanisms prevent AI failures:
+
+### Citation Gate — ≥2 Sources Required
+
+```typescript
+const shouldUpdate = confidence === 'high'
+  && citations.length >= 2
+  && !isDuplicate;
+```
+
+If the agent can't find at least 2 relevant sources (KB articles + resolutions), it **refuses to auto-respond** and flags the ticket for human review.
+
+### Confidence Breakdown — Transparent Scoring
+
+Every triage result includes a breakdown showing exactly why the system is confident (or not):
+
+```
+{
+  "kb_score": 0.82,          // How well KB articles matched
+  "resolution_score": 0.71,  // How well resolutions matched
+  "similar_tickets_score": 0.45,  // Historical ticket similarity
+  "overall": 0.68            // Weighted: 40% KB + 30% Res + 30% Tickets
+}
+```
+
+### NEEDS_HUMAN Fallback — When AI Can't Be Sure
+
+Three decision paths keep humans in the loop:
+
+| Confidence | Citations | Action |
+|---|---|---|
+| **High** (≥0.7) | ≥2 | ✅ Auto-triage + update ticket |
+| **Any** | Any | 🔗 Duplicate → tag for merge |
+| **Low** (<0.7) | <2 | 🚨 `NEEDS_HUMAN` — routed to agent |
+
+Internal note on flagged tickets: `"NEEDS_HUMAN: Insufficient automated context. Manual review required."`
+
+---
+
+## 🛠️ Local Setup
+
+### Prerequisites
+
+- Node.js ≥18
+- Docker (for local Elasticsearch) OR an Elastic Cloud account
+
+### Quick Start
 
 ```bash
-# 1. Start infrastructure
-cd infra
-docker-compose up -d
-
-# 2. Create indices
-./create-indices.sh
-
-# 3. Generate data
-cd ..
-node data/generator/generate_synthetic.js
-
-# 4. Install deps
+# Clone and install
+git clone https://github.com/your-org/elasticops-copilot.git
+cd elasticops-copilot
 npm install
 
-# 5. Run app
+# Start the app
 npm run dev
 ```
 
-## 🎓 Key Features for Judges
+Opens at: **http://localhost:3000**
 
-✅ **No External Dependencies**: Everything runs locally (or in cloud)  
-✅ **Dual Mode Support**: Works with Elastic Cloud OR local Docker  
-✅ **Agent Builder Proof**: Complete artifacts folder showing ES|QL tools, kNN search, multi-step workflows  
-✅ **LLM Integration**: Optional Google Gemini with citation gating and confidence scoring  
-✅ **Reproducible Demo**: Deterministic embeddings, synthetic data  
-✅ **Judge-Friendly**: One command to full demo in < 5 min  
-✅ **Real Elasticsearch**: ES|QL, kNN, hybrid search, aggregations  
-✅ **Production Patterns**: Metrics, audit trails, workflow orchestration, confidence gates  
-✅ **Clean Code**: Well-structured, commented, lint-friendly  
+### Environment Configuration
 
-## 📚 Documentation
-
-- **[CHANGELOG.md](./CHANGELOG.md)** - All changes for cloud + Agent Builder enhancement
-- **[CLOUD_SETUP.md](./CLOUD_SETUP.md)** - Complete Elastic Cloud setup guide
-- **[agent_builder/README.md](./agent_builder/README.md)** - Agent Builder artifacts overview
-- **[agent_builder/demo_steps.md](./agent_builder/demo_steps.md)** - 5-minute judge demo script
-- **[demo/ARCHITECTURE.md](./demo/ARCHITECTURE.md)** - System design details  
-
-## 📝 Scripts
+Copy `.env.example` and configure:
 
 ```bash
-npm run dev      # Start dev server
-npm run build    # Production build
-npm run start    # Start production server
+cp .env.example .env.local
 ```
+
+```env
+# Elasticsearch — choose cloud or local
+ELASTIC_MODE=cloud                    # 'cloud' or 'local'
+ELASTIC_CLOUD_ID=your_cloud_id_here   # For cloud mode
+ELASTIC_API_KEY=your_api_key_here     # For cloud mode
+ELASTIC_URL=http://localhost:9200     # For local mode
+
+# Application
+EMBED_DIMS=384
+APP_URL=http://localhost:3000
+```
+
+### Docker (Local Elasticsearch)
+
+```bash
+# One-command bootstrap: starts ES, creates indices, generates data, runs app
+./demo/bootstrap.sh
+```
+
+See [`CLOUD_SETUP.md`](./CLOUD_SETUP.md) for Elastic Cloud configuration.
+
+---
+
+## 🎬 Demo Walkthrough
+
+### 1. Incident Detection *(45s)*
+- Navigate to `/inbox` → Click **"Detect Error Spike"**
+- ES|QL finds error spikes → auto-creates incident + ticket
+- View timeline showing each detection step
+
+| Inbox — Incident List | Audit Timeline |
+|---|---|
+| ![Inbox](./demo/screenshots/inbox.png) | ![Audit Timeline](./demo/screenshots/audit-timeline.png) |
+
+### 2. Ticket Triage *(60s)*
+- Open any ticket → Click **"Run Triage"**
+- Watch: Embed → Classify → Dedupe → Retrieve → Draft → Act
+- Review citations, confidence score, and KB recommendations
+
+| Ticket Detail | Triage Results |
+|---|---|
+| ![Ticket Detail](./demo/screenshots/ticket-detail.png) | ![Triage Results](./demo/screenshots/ticket-triage.png) |
+
+### 3. Search Explorer *(30s)*
+- Navigate to `/search` → Search: "authentication error"
+- Toggle KB vs Tickets mode
+- Expand **"Why ranked here?"** to see BM25/kNN/RRF scoring
+
+| BM25 Search | kNN Vector Search |
+|---|---|
+| ![BM25 Search](./demo/screenshots/search-bm25.png) | ![kNN Search](./demo/screenshots/search-knn.png) |
+
+### 4. Dashboard & Copilot *(15s)*
+- View KPIs: duplicates prevented, time saved, MTTA
+- Chat with the AI Copilot for guided support
+
+| Dashboard | Copilot Chat |
+|---|---|
+| ![Dashboard](./demo/screenshots/dashboard.png) | ![Copilot](./demo/screenshots/copilot-chat.png) |
+
+---
+
+## 📁 Project Structure
+
+```
+elasticops-copilot/
+├── app/                           # Next.js 14 App Router
+│   ├── api/
+│   │   ├── run/ticket/[id]/      # 7-step triage workflow
+│   │   ├── run/incident/detect/  # ES|QL spike detection
+│   │   ├── search/               # RRF hybrid search
+│   │   ├── metrics/              # KPI aggregations
+│   │   └── timeline/[id]/        # Audit trail viewer
+│   ├── inbox/                    # Incidents + tickets list
+│   ├── search/                   # Search explorer UI
+│   └── dashboard/                # Metrics dashboard
+├── lib/
+│   ├── esql.ts                   # ES|QL spike detection queries
+│   ├── searchTemplates.ts        # BM25, kNN, hybrid search builders
+│   ├── embed.ts                  # Deterministic 384-dim embeddings
+│   └── elastic.ts                # Elasticsearch client
+├── infra/
+│   ├── mappings/                 # 7 index mappings (JSON)
+│   └── docker-compose.yml        # Local Elasticsearch
+├── agent_builder/                 # Agent Builder integration artifacts
+└── demo/                          # Bootstrap scripts + demo materials
+```
+
+---
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE)
+MIT License — see [LICENSE](./LICENSE)
+
+---
 
 ## 🙏 Acknowledgments
 
-Built for Elasticsearch hackathon. Uses Elasticsearch for all search, analytics, and storage needs. No AI APIs required - embeddings generated deterministically for demo consistency.
+Built for the Elasticsearch Hackathon. Every core feature — search, analytics, storage, scoring, and observability — runs on Elasticsearch. No external AI APIs required for the triage pipeline.
 
 ---
 
 **Quick Links:**
-- 📋 Inbox: http://localhost:3000/inbox
-- 🔍 Search: http://localhost:3000/search
-- 📊 Dashboard: http://localhost:3000/dashboard
-- 🔧 Kibana: http://localhost:5601
+[📋 Inbox](https://elasticops-copilot.vercel.app/inbox) · [🔍 Search](https://elasticops-copilot.vercel.app/search) · [📊 Dashboard](https://elasticops-copilot.vercel.app/dashboard) · [🤖 Copilot](https://elasticops-copilot.vercel.app/copilot)

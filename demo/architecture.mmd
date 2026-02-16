@@ -1,81 +1,49 @@
 graph TB
-    subgraph "Data Sources"
-        A[Application Logs<br/>logs-app]
-        B[KB Articles<br/>kb-articles]
-        C[Resolutions<br/>resolutions]
-        D[Tickets<br/>tickets]
+    subgraph Interface["🖥️ Interface Layer"]
+        UI["Copilot UI<br/>Dashboard & Home"]
+        INBOX["Inbox<br/>Incidents & Tickets"]
+        SEARCH["Search Explorer<br/>Hybrid Search + Explain"]
     end
-    
-    subgraph "Detection & Processing"
-        E[ES|QL Spike<br/>Detector]
-        F[Incident<br/>Creation]
-        G[Embedding<br/>Generator]
-        DemoSpike[Demo Spike<br/>Generator]
+
+    subgraph Agent["🤖 Agent Workflow Layer"]
+        direction LR
+        EMBED["1. Embed<br/>SHA-256 → 384d Vector"]
+        CLASSIFY["2. Classify<br/>Rule-Based Triage"]
+        DEDUPE["3. Dedupe<br/>kNN Similarity >.95"]
+        RETRIEVE_KB["4. Retrieve KB<br/>BM25 + kNN Hybrid"]
+        RETRIEVE_RES["5. Retrieve Resolutions<br/>kNN Filtered Search"]
+        DRAFT["6. Draft<br/>Citation-Gated Response"]
+        ACT["7. Act<br/>Update / Flag / Merge"]
     end
-    
-    subgraph "Multi-Agent Workflows"
-        H[Ticket Triage<br/>Agent]
-        I[Incident<br/>Response Agent]
+
+    subgraph Elastic["⚡ Elasticsearch Layer"]
+        LOGS["logs-app<br/>ES|QL Spike Detection"]
+        TICKETS["tickets<br/>BM25 + kNN"]
+        KB["kb-articles<br/>Hybrid Search"]
+        RES["resolutions<br/>kNN Retrieval"]
+        RRF["RRF Fusion<br/>Reciprocal Rank Fusion"]
+        CONF["Confidence Engine<br/>3-Component Scoring"]
+        AUDIT["ops-runs / ops-metrics<br/>Audit Timeline & KPIs"]
     end
-    
-    subgraph "Search & Retrieval"
-        J[RRF Hybrid Search<br/>BM25 + kNN + Rank Fusion]
-        K[Deduplication<br/>kNN]
-        L[Resolution<br/>Retrieval]
-        Explain[Search Explainability<br/>Component Scores & Ranks]
-    end
-    
-    subgraph "Observability"
-        M[ops-runs<br/>Timeline]
-        N[ops-metrics<br/>KPIs]
-        O[Dashboard<br/>UI]
-    end
-    
-    DemoSpike -->|Bulk Insert Errors| A
-    A -->|ES|QL Query| E
-    E -->|Error Spike| F
-    F -->|Create| D
-    F --> I
-    
-    D --> G
-    B --> G
-    C --> G
-    
-    G --> J
-    G --> K
-    G --> L
-    
-    J --> Explain
-    
-    D --> H
-    J --> H
-    K --> H
-    L --> H
-    
-    H -->|Update + Confidence| D
-    H -->|Record| M
-    H -->|Write| N
-    
-    I -->|Record| M
-    I -->|Write| N
-    
-    M --> O
-    N --> O
-    
-    style A fill:#e3f2fd
-    style B fill:#e3f2fd
-    style C fill:#e3f2fd
-    style D fill:#e3f2fd
-    style E fill:#fff3e0
-    style F fill:#fff3e0
-    style G fill:#fff3e0
-    style DemoSpike fill:#fff3e0
-    style H fill:#e8f5e9
-    style I fill:#e8f5e9
-    style J fill:#f3e5f5
-    style K fill:#f3e5f5
-    style L fill:#f3e5f5
-    style Explain fill:#f3e5f5
-    style M fill:#fce4ec
-    style N fill:#fce4ec
-    style O fill:#fce4ec
+
+    UI --> Agent
+    INBOX --> Agent
+    SEARCH --> RRF
+
+    EMBED --> CLASSIFY --> DEDUPE --> RETRIEVE_KB --> RETRIEVE_RES --> DRAFT --> ACT
+
+    LOGS -.->|"ES|QL: error spike ≥40/5min"| INBOX
+    DEDUPE -->|"kNN cosine similarity"| TICKETS
+    RETRIEVE_KB -->|"BM25 + kNN"| KB
+    RETRIEVE_RES -->|"kNN filtered"| RES
+    RRF -->|"1/(k+rank) fusion"| SEARCH
+    DRAFT -->|"≥2 citations required"| CONF
+    ACT -->|"step-by-step trace"| AUDIT
+
+    style Interface fill:#1a1a2e,stroke:#16213e,color:#e2e8f0
+    style Agent fill:#0f3460,stroke:#16213e,color:#e2e8f0
+    style Elastic fill:#533483,stroke:#16213e,color:#e2e8f0
+    style LOGS fill:#e94560,stroke:#e94560,color:#fff
+    style RRF fill:#e94560,stroke:#e94560,color:#fff
+    style CONF fill:#e94560,stroke:#e94560,color:#fff
+    style AUDIT fill:#e94560,stroke:#e94560,color:#fff
