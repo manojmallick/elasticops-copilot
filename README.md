@@ -322,6 +322,30 @@ EMBED_DIMS=384
 APP_URL=http://localhost:3000
 ```
 
+### Full environment variable reference
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `ELASTIC_MODE` | `cloud` | `cloud` (uses `ELASTIC_CLOUD_ID` and `ELASTIC_API_KEY`) or `local` (uses `ELASTIC_URL`) |
+| `ELASTIC_CLOUD_ID`, `ELASTIC_API_KEY` | none | Elastic Cloud deployment ID and API key |
+| `ELASTIC_URL` | `http://localhost:9200` | Local Elasticsearch URL |
+| `EMBED_DIMS` | `384` | Embedding dimensions; must match the index mapping |
+| `APP_URL` | `http://localhost:3000` | Server-side base URL of the app |
+| `NEXT_PUBLIC_APP_URL` | empty | Public URL used to build citation links in the browser; set it to your deployed domain in production |
+| `ELASTICOPS_WEBHOOK_SECRET` | unset | If set, `POST /api/tools/create_or_update_ticket` (the Agent Builder webhook) requires a matching `x-elasticops-secret` header and returns `401` otherwise. **If unset, the endpoint accepts any request**, so set it anywhere the app is reachable from the internet |
+| `DEMO_SECRET` | unset | Enables the demo endpoints (for example the spike simulator). If unset they return an error |
+| `NEXT_PUBLIC_DEMO_SECRET` | `demo-secret-2026` | The value the browser sends to the demo endpoints. Because it is `NEXT_PUBLIC_`, it is visible to every visitor: treat the demo secret as a convenience, not a security control, and disable or protect the demo endpoints in a public deployment |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | commented out | Reserved for a future LLM step; **not used by the code today** |
+
+### Scripts
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Dev server on `http://localhost:3000` |
+| `npm run build` / `npm start` | Production build and server |
+| `npm run lint` | Next.js lint |
+| `./demo/bootstrap.sh` | Start local Elasticsearch, create the indices, generate data and run the app |
+
 ### Docker (Local Elasticsearch)
 
 ```bash
